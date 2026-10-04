@@ -1,41 +1,78 @@
-# 🎪 [Project Name]
+# 🎟️ [Project Name] — Smart Club Operations Platform
 
-> One-line tagline describing what your project does (e.g., "A unified platform to manage college fests, events, and participants.")
+> A complete event and registration platform for student organizations. No Google Forms needed.
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+
+Built for the **9th DRMC International Tech Carnival 2026 — AI Web Development Contest** (Theme: *Smart Club Operations*).
 
 ---
 
 ## 1. Project Description
 
-[Project Name] is a web application that [what it does] for [who it is for]. It solves [problem] by [approach].
+Student clubs often run registrations through Google Forms, which gives participants a disjointed, unprofessional experience and gives organizers no real management tools.
 
-Write 3–5 sentences covering:
-- The problem (e.g., fest organizers juggle spreadsheets, forms, and chats)
-- Your solution
-- Who the users are (admins/organizers, participants, volunteers, judges)
+**[Project Name]** replaces that with a single branded platform built around this hierarchy:
+
+```
+Organization → Fest → Event → Registration
+```
+
+Participants can browse fests, explore the events inside each fest, and register for individual events. Organizers can create and manage fests and events, and monitor and manage registrations from a dashboard.
+
+Example data shipped with the deployment:
+
+```
+DRMC IT Club
+├── Tech Carnival 2026
+│   ├── AI Web Development Contest
+│   ├── Programming Contest
+│   ├── Robotics Challenge
+│   └── Gaming Tournament
+├── Winter Tech Fest 2026
+│   ├── Hackathon
+│   ├── Workshop
+│   └── Tech Quiz
+└── Freshers Tech Fest 2027
+    ├── Coding Challenge
+    └── AI Workshop
+```
 
 ---
 
 ## 2. Features
 
-**Core**
-- [ ] Create and manage fests (name, dates, venue, banner)
-- [ ] Create and manage events under a fest (schedule, capacity, rules, prizes)
-- [ ] Participant registration and management
-- [ ] Role-based access (Admin / Organizer / Participant)
-- [ ] Dashboard with live stats (registrations, attendance, etc.)
+### 🔎 Fest & Event Directory
+- Browse available and upcoming fests
+- Event cards showing title, category, date/time, venue, seats left, and deadline
+- Search events by name/keyword
+- Filter by category (Programming, Robotics, Gaming, Workshop, Quiz, etc.)
+- Fest details page listing all events in that fest
+- Event details page: description, date & time, venue, deadline, capacity, registration form
 
-**Extras**
-- [ ] Search, filter, and sort events
-- [ ] Notifications / announcements
-- [ ] Leaderboard or results
-- [ ] Export data (CSV)
-- [ ] Dark mode
+### 📝 Registration System
+- Register for an event with a built-in form (no external tools)
+- Form validation (required fields, email/phone format, duplicate prevention)
+- Registration confirmation screen with a unique registration ID
+- Capacity limits and deadline enforcement (registration closes automatically when full or past deadline)
+- "My Registrations" page to view, update, or cancel registrations
 
-**Fully responsive** across mobile, tablet, and desktop.
+### 🛠️ Organizer / Admin Dashboard
+- Secure organizer login
+- Create, edit, and delete fests and events
+- View all registered participants per event
+- Search and filter participants (by name, email, status)
+- Manage registration status (Pending / Approved / Rejected / Cancelled)
+- Statistics: total registrations, seats filled, per-event and per-fest breakdowns
+- CSV export of participant lists
 
-> ✏️ Replace the items above with what you actually built. Delete anything unfinished.
+### ⭐ Bonus Features
+> Replace with your own creative additions. Ideas: QR-code tickets and check-in, email confirmations, waitlist, AI event description generator, announcements, certificate generation, team registration, analytics charts.
+- [Bonus feature 1]
+- [Bonus feature 2]
+
+### 📱 Responsive Design
+Fully responsive and functional on mobile, tablet, and desktop.
 
 ---
 
@@ -43,11 +80,11 @@ Write 3–5 sentences covering:
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | e.g., React / Next.js, Tailwind CSS |
-| Backend | e.g., Node.js + Express / Next.js API routes / Firebase / Supabase |
-| Database | e.g., PostgreSQL / MongoDB / Firestore |
-| Auth | e.g., JWT / NextAuth / Supabase Auth |
-| Hosting | e.g., Vercel (frontend), Render (backend), Neon (DB) |
+| Frontend | [e.g., Next.js / React, Tailwind CSS] |
+| Backend | [e.g., Node.js + Express / Next.js API routes / Supabase / Firebase] |
+| Database | [e.g., PostgreSQL / MongoDB / Firestore] |
+| Authentication | [e.g., JWT / NextAuth / Supabase Auth] |
+| Hosting | [e.g., Vercel, Render, Neon] |
 
 ---
 
@@ -56,50 +93,48 @@ Write 3–5 sentences covering:
 ### Prerequisites
 - Node.js >= 18
 - npm or yarn
-- [Database/service requirements]
+- [Database requirement]
 
 ### Installation
 
 ```bash
-# 1. Clone the repository
+# 1. Clone
 git clone https://github.com/<your-username>/<your-repo>.git
 cd <your-repo>
 
 # 2. Install dependencies
 npm install
 
-# 3. Configure environment variables
+# 3. Configure environment
 cp .env.example .env
-# then fill in the values (see below)
+# fill in values below
 
-# 4. Seed the database with sample data
+# 4. Seed sample data (fests, events, participants)
 npm run seed
 
-# 5. Start the development server
+# 5. Run
 npm run dev
 ```
 
-The app will be available at `http://localhost:3000`.
+App runs at `http://localhost:3000`.
 
 ### Environment Variables
 
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | Database connection string |
-| `JWT_SECRET` | Secret for signing tokens |
-| `NEXT_PUBLIC_API_URL` | Base URL of the API |
-
-> Never commit your real `.env` file. Provide `.env.example` only.
+| `JWT_SECRET` | Secret for signing auth tokens |
+| `[OTHER_KEY]` | [Description] |
 
 ---
 
 ## 5. Deployment URL
 
-🔗 **Live App:** https://your-deployed-app.example.com
+🔗 **Live App:** https://your-app.example.com
 
-🔗 **Backend/API (if separate):** https://your-api.example.com
+🔗 **API (if separate):** https://your-api.example.com
 
-> The deployed app comes pre-loaded with sample data (fests, events, and participants), so no manual setup is needed to evaluate it.
+The deployment is pre-loaded with sample data, so judges can evaluate every feature without creating anything first.
 
 ---
 
@@ -107,20 +142,23 @@ The app will be available at `http://localhost:3000`.
 
 | Role | Email / Username | Password |
 |------|------------------|----------|
-| Admin | admin@example.com | `Admin@123` |
-| Organizer | organizer@example.com | `Organizer@123` |
-| Participant | participant@example.com | `Participant@123` |
+| Organizer / Admin | admin@example.com | `Admin@123` |
+| Participant | user@example.com | `User@123` |
+
+> Participants can also register as new users. Replace these with your real working demo accounts.
 
 ---
 
 ## 7. Sample Data
 
-The deployment is seeded with mock data, including:
-- X fests
-- Y events across categories (technical, cultural, sports, etc.)
-- Z participants and registrations
+The deployed app is seeded with:
+- 1 organization (DRMC IT Club)
+- 3 fests (Tech Carnival 2026, Winter Tech Fest 2026, Freshers Tech Fest 2027)
+- [N] events across multiple categories
+- [N] mock participants and registrations in varied statuses
+- Events in different states (open, almost full, full, deadline passed) to demonstrate limits
 
-Seed script: `npm run seed` (see `/scripts/seed.js`). Data is AI-generated/mock and contains no real personal information.
+Seed script: `npm run seed`. All data is AI-generated/mock; no real personal data is used.
 
 ---
 
@@ -128,58 +166,58 @@ Seed script: `npm run seed` (see `/scripts/seed.js`). Data is AI-generated/mock 
 
 | Service | Purpose |
 |---------|---------|
-| e.g., Supabase / Firebase | Database & authentication |
-| e.g., Cloudinary | Image hosting |
-| e.g., Resend / Nodemailer | Email notifications |
-| e.g., Unsplash | Sample images (per Unsplash License) |
-| e.g., Google Fonts | Typography (Open Font License) |
+| [e.g., Supabase / Firebase] | Database & auth |
+| [e.g., Resend / Nodemailer] | Confirmation emails |
+| [e.g., Cloudinary / Unsplash] | Images |
+| [e.g., Google Fonts] | Typography |
 
-All third-party assets are used in accordance with their respective licenses.
+All third-party assets are used in compliance with their licenses.
 
 ---
 
 ## 9. AI Tools & Features Used
 
-**Development tools**
 | Tool | How it was used |
 |------|-----------------|
-| Claude | e.g., README drafting, architecture planning, debugging |
-| Cursor / GitHub Copilot | e.g., code generation and refactoring |
-| ChatGPT | e.g., mock data generation |
+| Claude | [e.g., README, architecture planning, debugging] |
+| [Cursor / Copilot / ChatGPT] | [e.g., code generation, mock data] |
 
-**AI features inside the app** (if any)
-- e.g., AI-generated event descriptions
-
-> Be transparent: list every AI tool you used and what you used it for.
+**AI features in the app (if any):** [e.g., AI-generated event descriptions]
 
 ---
 
 ## 10. Screenshots
 
-| Home / Dashboard | Event Listing |
+| Fest Directory | Event Details |
 |---|---|
-| ![Dashboard](./screenshots/dashboard.png) | ![Events](./screenshots/events.png) |
+| ![Directory](./screenshots/directory.png) | ![Event](./screenshots/event.png) |
 
-| Registration | Mobile View |
+| Registration Form | Confirmation |
 |---|---|
-| ![Registration](./screenshots/registration.png) | ![Mobile](./screenshots/mobile.png) |
+| ![Form](./screenshots/form.png) | ![Confirmation](./screenshots/confirmation.png) |
 
-> Put images in a `/screenshots` folder. Include at least one mobile screenshot.
+| Organizer Dashboard | Participant Management |
+|---|---|
+| ![Dashboard](./screenshots/dashboard.png) | ![Participants](./screenshots/participants.png) |
+
+| Mobile View |
+|---|
+| ![Mobile](./screenshots/mobile.png) |
 
 ---
 
 ## 11. Known Limitations
 
-- e.g., Email notifications run in test mode only
-- e.g., No payment gateway integration (registration is free/mock)
-- e.g., Free-tier hosting may cause a cold start delay (~30s) on first load
-- e.g., Limited test coverage
+- [e.g., Email confirmations are in test mode]
+- [e.g., No payment integration; registration is free]
+- [e.g., Free-tier hosting may cause a slow first load]
+- [e.g., Limited automated test coverage]
 
 ---
 
 ## 12. License
 
-This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
+Licensed under the **MIT License**. See [LICENSE](./LICENSE).
 
 ---
 
