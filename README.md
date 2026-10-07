@@ -1,230 +1,166 @@
-# 🎟️ [Project Name] — Smart Club Operations Platform
+# Smart Club Operations Platform
 
-> A complete event and registration platform for student organizations. No Google Forms needed.
+## 1. Project name
+Smart Club Operations Platform (Smart Club Ops), built for the DRMC IT Club.
 
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+## 2. Project description
+An open-source web app that lets a student club run its fests and events without Google Forms and spreadsheets. Clubs publish fests and events, students register through forms the organizers design, every confirmed registration gets a signed digital pass with a QR code, and organizers manage events, seats and participants from one console.
 
-Built for the **9th DRMC International Tech Carnival 2026 — AI Web Development Contest** (Theme: *Smart Club Operations*).
+Everything follows one hierarchy: **Club > Fest > Event > Registration > Pass**, for example DRMC IT Club > Tech Carnival 2026 > Programming Contest.
 
----
+## 3. Features
 
-## 1. Project Description
+**For students (no account needed)**
+- Home page with live figures, events open for registration and current fests.
+- Event directory with search, club and category filters and status chips (open, full, closed, ended). Filters live in the address, so a filtered view can be shared or reloaded.
+- Club pages and fest pages listing their events.
+- Event page with date, time, venue, seats left, deadline and rules.
+- Registration with a form built per event (text, long text, number, email, phone, dropdown; required or optional). The server enforces the deadline, the seat limit and one registration per email.
+- Instant confirmation or organizer approval, set per event.
+- Registration confirmation page with an entry pass: status, event details and a QR code. Passes are signed, and are revoked automatically when a registration is rejected or cancelled.
+- My Registrations: the passes made on this device, with cancel (which frees the seat).
+- Volunteer application form.
+- Photo gallery slideshow with keyboard, swipe and fullscreen.
+- **Tech Guide**, an event assistant (see below).
 
-Student clubs often run registrations through Google Forms, which gives participants a disjointed, unprofessional experience and gives organizers no real management tools.
+**For organizers (behind an organizer key)**
+- Dashboard: pending approvals, confirmed, checked in, seats taken, recent registrations, upcoming events.
+- Fest management: create, edit, archive, restore, delete.
+- Event management: create, edit, archive, restore, delete; seats, deadline, instant or approved registration.
+- Registration form builder: add, reorder and remove questions, with a live preview of what participants will see.
+- Participant management: search, filter by event and status, approve, reject, cancel, mark checked in, view each participant's answers, export an event's registrations as CSV.
+- Volunteer applications list.
 
-**[Project Name]** replaces that with a single branded platform built around this hierarchy:
+**Tech Guide (AI assistant)**
+- Answers questions about published events, fests and clubs: when, where, seats left, deadlines, what is open, what is on this week.
+- Every answer is built from the live database records and links to the pages it used. It does not invent events: an unknown name gets "I couldn't find anything about ...".
+- Read-only. It refuses requests for participant details, organizer access or anything internal.
+- Works with no AI provider at all (a rule-based interpreter in `server/domain/assistant.js`). An optional AI helper can be switched on with server-side environment variables to interpret unusual phrasings; its output is validated and it still answers only from real records. See "Third-party services".
 
-```
-Organization → Fest → Event → Registration
-```
+**Across the app**
+- Responsive from 320px phones to desktop; keyboard accessible; honours reduced-motion settings.
+- Hardening: atomic seat allocation, rate limiting on public writes, on the assistant and on all organizer routes (plus throttling of wrong organizer keys), a strict Content-Security-Policy (no inline scripts or styles), input validation, pagination, production refuses to start with missing or demo secrets.
 
-Participants can browse fests, explore the events inside each fest, and register for individual events. Organizers can create and manage fests and events, and monitor and manage registrations from a dashboard.
+## 4. Tech stack
+- **Frontend:** React 19 with Vite 5 (`web/`). Plain CSS with design tokens (`web/src/styles/tokens.css`), a small in-house History-API router, inline SVG icons, self-hosted Inter and Orbitron fonts through `@fontsource`. No UI framework, Tailwind or router package.
+- **Backend:** Node.js 22.13 or newer, no framework and **zero npm dependencies** (`server/`). Layers: `domain` (pure rules) > `repository` (SQL) > `services` > `http/routes` > `http/router`.
+- **Database:** persistent SQLite through Node's built-in `node:sqlite` (WAL mode, ordered migrations in `server/db.js`). Data lives in one file (`DB_FILE`, default `./club.db`) and survives restarts.
+- **QR codes:** an in-house encoder (`web/src/lib/qr.js`), no library.
 
-Example data shipped with the deployment:
+Design decisions: [ADR-001 zero dependencies](docs/architecture/adr-001-zero-dependencies.md), [ADR-002 SQLite on a persistent disk](docs/architecture/adr-002-sqlite-persistent-disk.md), [ADR-003 capability-token identity](docs/architecture/adr-003-capability-token-identity.md). The design system is described in [docs/design-system.md](docs/design-system.md).
 
-```
-DRMC IT Club
-├── Tech Carnival 2026
-│   ├── AI Web Development Contest
-│   ├── Programming Contest
-│   ├── Robotics Challenge
-│   └── Gaming Tournament
-├── Winter Tech Fest 2026
-│   ├── Hackathon
-│   ├── Workshop
-│   └── Tech Quiz
-└── Freshers Tech Fest 2027
-    ├── Coding Challenge
-    └── AI Workshop
-```
+## 5. Setup instructions
 
----
-
-## 2. Features
-
-### 🔎 Fest & Event Directory
-- Browse available and upcoming fests
-- Event cards showing title, category, date/time, venue, seats left, and deadline
-- Search events by name/keyword
-- Filter by category (Programming, Robotics, Gaming, Workshop, Quiz, etc.)
-- Fest details page listing all events in that fest
-- Event details page: description, date & time, venue, deadline, capacity, registration form
-
-### 📝 Registration System
-- Register for an event with a built-in form (no external tools)
-- Form validation (required fields, email/phone format, duplicate prevention)
-- Registration confirmation screen with a unique registration ID
-- Capacity limits and deadline enforcement (registration closes automatically when full or past deadline)
-- "My Registrations" page to view, update, or cancel registrations
-
-### 🛠️ Organizer / Admin Dashboard
-- Secure organizer login
-- Create, edit, and delete fests and events
-- View all registered participants per event
-- Search and filter participants (by name, email, status)
-- Manage registration status (Pending / Approved / Rejected / Cancelled)
-- Statistics: total registrations, seats filled, per-event and per-fest breakdowns
-- CSV export of participant lists
-
-### ⭐ Bonus Features
-> Replace with your own creative additions. Ideas: QR-code tickets and check-in, email confirmations, waitlist, AI event description generator, announcements, certificate generation, team registration, analytics charts.
-- [Bonus feature 1]
-- [Bonus feature 2]
-
-### 📱 Responsive Design
-Fully responsive and functional on mobile, tablet, and desktop.
-
----
-
-## 3. Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | [e.g., Next.js / React, Tailwind CSS] |
-| Backend | [e.g., Node.js + Express / Next.js API routes / Supabase / Firebase] |
-| Database | [e.g., PostgreSQL / MongoDB / Firestore] |
-| Authentication | [e.g., JWT / NextAuth / Supabase Auth] |
-| Hosting | [e.g., Vercel, Render, Neon] |
-
----
-
-## 4. Setup Instructions
-
-### Prerequisites
-- Node.js >= 18
-- npm or yarn
-- [Database requirement]
-
-### Installation
+Requirements: Node.js 22.13 or newer.
 
 ```bash
-# 1. Clone
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
-
-# 2. Install dependencies
-npm install
-
-# 3. Configure environment
-cp .env.example .env
-# fill in values below
-
-# 4. Seed sample data (fests, events, participants)
-npm run seed
-
-# 5. Run
-npm run dev
+npm run web:install   # installs the frontend's packages (React, Vite, fonts) into web/
+npm run web:build     # builds the React app into web/dist
+npm run seed          # demo data, ONLY if the database is empty (never wipes registrations)
+npm start             # http://localhost:3000
 ```
 
-App runs at `http://localhost:3000`.
+The server has no packages of its own to install. It serves `web/dist` when that folder exists. **Build the frontend before starting the server:** without `web/dist` the server falls back to an earlier, simpler interface kept in `public/`, which is not the current design. The choice is made once at startup, so restart after the first build.
 
-### Environment Variables
+For frontend development with hot reload: `npm start` in one terminal, `npm run web:dev` in another (Vite on port 5173, proxying `/api` to port 3000).
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Database connection string |
-| `JWT_SECRET` | Secret for signing auth tokens |
-| `[OTHER_KEY]` | [Description] |
+Settings are environment variables; `.env.example` lists all of them (port, database file, organizer key, pass secret, proxy trust, rate limits, optional assistant helper). `npm run seed:reset` wipes and re-seeds a local database and is refused in production.
 
----
+### Deployment
+With Docker (the image builds the frontend itself):
+```bash
+docker build -t club-ops .
+docker run -p 3000:3000 -v club-data:/data \
+  -e ORGANIZER_KEY='<long random value>' -e PASS_SECRET='<long random value>' -e TRUST_PROXY=1 club-ops
+```
+Without Docker: build the frontend as above, then start with `NODE_ENV=production`, `ORGANIZER_KEY`, `PASS_SECRET` and `DB_FILE` set.
 
-## 5. Deployment URL
+- With `NODE_ENV=production` the server **refuses to start** if `ORGANIZER_KEY` or `PASS_SECRET` is missing or still a demo value.
+- Mount a persistent disk for the database (`DB_FILE=/data/club.db` in the image) and run exactly **one** instance.
+- Set `TRUST_PROXY=1` behind one reverse proxy so rate limits see real client addresses.
+- The container runs `seed` on start, which does nothing once the database has events.
 
-🔗 **Live App:** https://your-app.example.com
+### Testing
+```bash
+npm test                              # backend: 97 tests (API, units, flows, assistant); uses temporary databases
+node tools/persistence-check.mjs      # 9 checks: data survives a restart and a crash
+```
+Browser suites (need Playwright, which is not a project dependency, and a server on a freshly seeded database serving `web/dist`): `tools/browser-3b.mjs` (public flows, 57 checks), `browser-3b-audit.mjs` (8), `browser-3c.mjs` (organizer dashboard and registrations, 61), `browser-3e.mjs` (fest and event management, 40), `browser-3f.mjs` (assistant, 27), `browser-3g.mjs` (layout, branding, accessibility, 49). How to run them is in `AI_HANDOFF.md`. All passed on 8 October 2026 against a test bundle of this source (see "Known limitations" for what that does and does not cover).
 
-🔗 **API (if separate):** https://your-api.example.com
+`tools/build-preview.mjs` builds `preview.html`, a single clickable file of the whole app on sample data, for demos without a server.
 
-The deployment is pre-loaded with sample data, so judges can evaluate every feature without creating anything first.
+### Data model
+`clubs` > `fests` > `events` > `registrations` > `passes`, plus `volunteers`. The demo catalogue is in `server/seed-data.js` (16 DRMC clubs with sample fests and events). The schema is tabulated in `PHASE3_STATUS.md`.
 
----
+### Project layout
+```
+server/   domain/ (rules: registration, pass, intake, csv, assistant)   repository/ (SQL)   services/   http/ (router, rate limit, static, routes)
+          ai/ (optional assistant helper)   db.js   config.js   seed.js   seed-data.js   tests (test*.js)
+web/      React app: src/pages, src/components, src/layouts, src/lib, src/styles, src/assets
+public/   earlier zero-build interface, served only when web/dist is missing
+tools/    browser suites, persistence check, preview builder
+docs/     screenshots/, architecture/ (ADRs), design-system.md
+```
 
-## 6. Demo Credentials
+## 6. Deployment URL
+Not deployed yet.
 
-| Role | Email / Username | Password |
-|------|------------------|----------|
-| Organizer / Admin | admin@example.com | `Admin@123` |
-| Participant | user@example.com | `User@123` |
+## 7. Demo credentials
+Organizer key for local development: `demo-organizer-key` (Organizer > sign in). It is a placeholder, and the server will not start in production with it. Participants need no login.
 
-> Participants can also register as new users. Replace these with your real working demo accounts.
+## 8. Third-party services/APIs
+None are required at runtime: no external database, authentication, email, analytics, font or CDN service. Fonts are bundled with the app.
 
----
+Optional: the Tech Guide can call an AI provider with an OpenAI-compatible "chat completions" endpoint if `AI_API_KEY` and `AI_MODEL` are set on the server (`AI_BASE_URL` selects the provider). It is off by default, the key never reaches the browser, and no key is included in this repository. This helper has not been tested against a real provider.
 
-## 7. Sample Data
-
-The deployed app is seeded with:
-- 1 organization (DRMC IT Club)
-- 3 fests (Tech Carnival 2026, Winter Tech Fest 2026, Freshers Tech Fest 2027)
-- [N] events across multiple categories
-- [N] mock participants and registrations in varied statuses
-- Events in different states (open, almost full, full, deadline passed) to demonstrate limits
-
-Seed script: `npm run seed`. All data is AI-generated/mock; no real personal data is used.
-
----
-
-## 8. Third-Party Services / APIs
-
-| Service | Purpose |
-|---------|---------|
-| [e.g., Supabase / Firebase] | Database & auth |
-| [e.g., Resend / Nodemailer] | Confirmation emails |
-| [e.g., Cloudinary / Unsplash] | Images |
-| [e.g., Google Fonts] | Typography |
-
-All third-party assets are used in compliance with their licenses.
-
----
-
-## 9. AI Tools & Features Used
-
-| Tool | How it was used |
-|------|-----------------|
-| Claude | [e.g., README, architecture planning, debugging] |
-| [Cursor / Copilot / ChatGPT] | [e.g., code generation, mock data] |
-
-**AI features in the app (if any):** [e.g., AI-generated event descriptions]
-
----
+## 9. AI tools/features used
+- **In the product:** Tech Guide, the event assistant described above.
+- **In development:** Claude (Anthropic) was used throughout: scoping the original plan, writing the server, the React frontend, the QR encoder, the assistant and the tests, reviewing the work, and triaging an external AI code review (see `docs/CODE_REVIEW_TRIAGE.md`). The UI/UX Pro Max design skill was consulted during the interface polish; what was adopted and what was rejected is recorded in `docs/design-system.md`. Generated code was checked by running the automated tests and by driving the real pages in a headless browser.
 
 ## 10. Screenshots
+Taken on 8 October 2026 from the current build (React frontend, Phase 3G design, seeded demo data). All files are in `docs/screenshots/`.
 
-| Fest Directory | Event Details |
-|---|---|
-| ![Directory](./screenshots/directory.png) | ![Event](./screenshots/event.png) |
+**Public site**
 
-| Registration Form | Confirmation |
-|---|---|
-| ![Form](./screenshots/form.png) | ![Confirmation](./screenshots/confirmation.png) |
+![Home: hero with live figures, open events, fests and the footer](docs/screenshots/home.png)
+![Events directory with search, filters and event cards](docs/screenshots/events.png)
+![Fest page with its events](docs/screenshots/fest.png)
+![Event details with the facts card and Register button](docs/screenshots/event-details.png)
+![Registration form](docs/screenshots/registration.png)
+![Registration confirmation: the entry pass with its QR code](docs/screenshots/pass.png)
+![My registrations](docs/screenshots/my-registrations.png)
+![Gallery](docs/screenshots/gallery.png)
+![Tech Guide, the event assistant, answering from the live event data](docs/screenshots/tech-guide.png)
 
-| Organizer Dashboard | Participant Management |
-|---|---|
-| ![Dashboard](./screenshots/dashboard.png) | ![Participants](./screenshots/participants.png) |
+**Organizer**
 
-| Mobile View |
-|---|
-| ![Mobile](./screenshots/mobile.png) |
+![Organizer sign in](docs/screenshots/organizer-login.png)
+![Organizer dashboard](docs/screenshots/organizer-dashboard.png)
+![Organizer events management](docs/screenshots/organizer-events.png)
+![Managing one event: details, seats and its registration form](docs/screenshots/organizer-event.png)
+![Registrations list with approve and view actions](docs/screenshots/organizer-registrations.png)
+![Registration form builder](docs/screenshots/organizer-form-builder.png)
 
----
+**Phone (390px wide)**
 
-## 11. Known Limitations
+<img src="docs/screenshots/mobile-home.png" width="240" alt="Home on a phone"> <img src="docs/screenshots/mobile-events.png" width="240" alt="Events on a phone"> <img src="docs/screenshots/mobile-event-details.png" width="240" alt="Event details on a phone">
 
-- [e.g., Email confirmations are in test mode]
-- [e.g., No payment integration; registration is free]
-- [e.g., Free-tier hosting may cause a slow first load]
-- [e.g., Limited automated test coverage]
+<img src="docs/screenshots/mobile-menu.png" width="240" alt="Menu on a phone"> <img src="docs/screenshots/mobile-tech-guide.png" width="240" alt="Tech Guide on a phone"> <img src="docs/screenshots/mobile-organizer-dashboard.png" width="240" alt="Organizer dashboard on a phone">
 
----
+<img src="docs/screenshots/mobile-pass.png" width="240" alt="Entry pass on a phone"> <img src="docs/screenshots/mobile-footer.png" width="240" alt="Footer on a phone">
+
+Note: these were captured from a build without the bundled web fonts, so headings appear in the fallback typeface rather than Orbitron. Retake them after `npm run web:install && npm run web:build` if the heading font matters for the submission.
+
+## 11. Known limitations
+- **Check-in:** there is no QR scanner screen yet (the Check-in page is a placeholder). Organizers mark a participant as checked in from the registration's detail view; the pass check-in API exists.
+- **Organizer access** is one shared key, not individual accounts.
+- **Participant identity** is a private link stored in the browser. Clearing browser data loses access unless the link was saved. There are no email notifications.
+- **SQLite** needs a persistent disk and a single running instance. The rate limiter is in memory, per instance.
+- **Tech Guide** understands English questions about events, fests and clubs only; it does not hold a general conversation.
+- **Gallery** photos are files in the source (`web/src/gallery/albums.js`); there is no image upload.
+- **Verification gaps:** at the time of packaging the production Vite build had not been run, because the development environment could not reach the npm registry. All browser testing used an esbuild bundle of the same source without the web fonts, in headless Chromium only. Run `npm run web:install && npm run web:build` and check the site (especially Orbitron headings on small phones) before deploying. Firefox, Safari, real phones and screen readers have not been tested.
+- The club logo file is low resolution with a dark background baked in; a transparent version would look cleaner.
+- The QR encoder supports pass tokens up to 106 bytes (current tokens are about 35).
 
 ## 12. License
-
-Licensed under the **MIT License**. See [LICENSE](./LICENSE).
-
----
-
-## 13. Contributors
-
-- [Your Name](https://github.com/your-username)
-
----
-
-*The organizing authority reserves the right to make the final decision regarding rule interpretation, eligibility, judging, scoring, and any matters not explicitly covered in the guidelines. All decisions made by the judging panel and organizing authority are final.*
+MIT, see [LICENSE](LICENSE).

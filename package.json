@@ -1,0 +1,18 @@
+{
+  "name": "smart-club-ops",
+  "version": "0.1.0",
+  "description": "Open-source event & fest management for student clubs (Org > Fest > Event > Registration > Pass)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --no-warnings server/index.js",
+    "seed": "node --no-warnings server/seed.js",
+    "seed:reset": "node --no-warnings server/seed.js --reset",
+    "test": "node --no-warnings server/test.js && node --no-warnings server/test-unit.js && node --no-warnings server/test-flows.js && node --no-warnings server/test-assistant.js",
+    "web:install": "npm --prefix web install",
+    "web:build": "npm --prefix web run build",
+    "web:dev": "npm --prefix web run dev"
+  }
+}
