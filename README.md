@@ -1,166 +1,881 @@
 # Smart Club Operations Platform
 
-## 1. Project name
-Smart Club Operations Platform (Smart Club Ops), built for the DRMC IT Club.
+### A complete digital platform for managing student clubs, fests, events, and registrations — without Google Forms.
 
-## 2. Project description
-An open-source web app that lets a student club run its fests and events without Google Forms and spreadsheets. Clubs publish fests and events, students register through forms the organizers design, every confirmed registration gets a signed digital pass with a QR code, and organizers manage events, seats and participants from one console.
+**Built for DRMC IT Club**
 
-Everything follows one hierarchy: **Club > Fest > Event > Registration > Pass**, for example DRMC IT Club > Tech Carnival 2026 > Programming Contest.
+> **Smart Club Operations** replaces fragmented event-registration workflows with one connected system for publishing events, collecting registrations, managing participants, and issuing digital entry passes.
 
-## 3. Features
+**Project:** Smart Club Operations Platform  
+**Organization:** DRMC IT Club  
+**Theme:** Smart Club Operations  
+**License:** MIT
 
-**For students (no account needed)**
-- Home page with live figures, events open for registration and current fests.
-- Event directory with search, club and category filters and status chips (open, full, closed, ended). Filters live in the address, so a filtered view can be shared or reloaded.
-- Club pages and fest pages listing their events.
-- Event page with date, time, venue, seats left, deadline and rules.
-- Registration with a form built per event (text, long text, number, email, phone, dropdown; required or optional). The server enforces the deadline, the seat limit and one registration per email.
-- Instant confirmation or organizer approval, set per event.
-- Registration confirmation page with an entry pass: status, event details and a QR code. Passes are signed, and are revoked automatically when a registration is rejected or cancelled.
-- My Registrations: the passes made on this device, with cancel (which frees the seat).
-- Volunteer application form.
-- Photo gallery slideshow with keyboard, swipe and fullscreen.
-- **Tech Guide**, an event assistant (see below).
+---
 
-**For organizers (behind an organizer key)**
-- Dashboard: pending approvals, confirmed, checked in, seats taken, recent registrations, upcoming events.
-- Fest management: create, edit, archive, restore, delete.
-- Event management: create, edit, archive, restore, delete; seats, deadline, instant or approved registration.
-- Registration form builder: add, reorder and remove questions, with a live preview of what participants will see.
-- Participant management: search, filter by event and status, approve, reject, cancel, mark checked in, view each participant's answers, export an event's registrations as CSV.
-- Volunteer applications list.
+## Overview
 
-**Tech Guide (AI assistant)**
-- Answers questions about published events, fests and clubs: when, where, seats left, deadlines, what is open, what is on this week.
-- Every answer is built from the live database records and links to the pages it used. It does not invent events: an unknown name gets "I couldn't find anything about ...".
-- Read-only. It refuses requests for participant details, organizer access or anything internal.
-- Works with no AI provider at all (a rule-based interpreter in `server/domain/assistant.js`). An optional AI helper can be switched on with server-side environment variables to interpret unusual phrasings; its output is validated and it still answers only from real records. See "Third-party services".
+Student clubs often depend on Google Forms, spreadsheets, messaging apps, and manual processes to organize events.
 
-**Across the app**
-- Responsive from 320px phones to desktop; keyboard accessible; honours reduced-motion settings.
-- Hardening: atomic seat allocation, rate limiting on public writes, on the assistant and on all organizer routes (plus throttling of wrong organizer keys), a strict Content-Security-Policy (no inline scripts or styles), input validation, pagination, production refuses to start with missing or demo secrets.
+Smart Club Operations brings those workflows into one platform.
 
-## 4. Tech stack
-- **Frontend:** React 19 with Vite 5 (`web/`). Plain CSS with design tokens (`web/src/styles/tokens.css`), a small in-house History-API router, inline SVG icons, self-hosted Inter and Orbitron fonts through `@fontsource`. No UI framework, Tailwind or router package.
-- **Backend:** Node.js 22.13 or newer, no framework and **zero npm dependencies** (`server/`). Layers: `domain` (pure rules) > `repository` (SQL) > `services` > `http/routes` > `http/router`.
-- **Database:** persistent SQLite through Node's built-in `node:sqlite` (WAL mode, ordered migrations in `server/db.js`). Data lives in one file (`DB_FILE`, default `./club.db`) and survives restarts.
-- **QR codes:** an in-house encoder (`web/src/lib/qr.js`), no library.
+The system follows a simple hierarchy:
 
-Design decisions: [ADR-001 zero dependencies](docs/architecture/adr-001-zero-dependencies.md), [ADR-002 SQLite on a persistent disk](docs/architecture/adr-002-sqlite-persistent-disk.md), [ADR-003 capability-token identity](docs/architecture/adr-003-capability-token-identity.md). The design system is described in [docs/design-system.md](docs/design-system.md).
-
-## 5. Setup instructions
-
-Requirements: Node.js 22.13 or newer.
-
-```bash
-npm run web:install   # installs the frontend's packages (React, Vite, fonts) into web/
-npm run web:build     # builds the React app into web/dist
-npm run seed          # demo data, ONLY if the database is empty (never wipes registrations)
-npm start             # http://localhost:3000
+```text
+Club
+ └── Fest
+      └── Event
+           └── Registration
+                └── Digital Pass
 ```
 
-The server has no packages of its own to install. It serves `web/dist` when that folder exists. **Build the frontend before starting the server:** without `web/dist` the server falls back to an earlier, simpler interface kept in `public/`, which is not the current design. The choice is made once at startup, so restart after the first build.
+For example:
 
-For frontend development with hot reload: `npm start` in one terminal, `npm run web:dev` in another (Vite on port 5173, proxying `/api` to port 3000).
-
-Settings are environment variables; `.env.example` lists all of them (port, database file, organizer key, pass secret, proxy trust, rate limits, optional assistant helper). `npm run seed:reset` wipes and re-seeds a local database and is refused in production.
-
-### Deployment
-With Docker (the image builds the frontend itself):
-```bash
-docker build -t club-ops .
-docker run -p 3000:3000 -v club-data:/data \
-  -e ORGANIZER_KEY='<long random value>' -e PASS_SECRET='<long random value>' -e TRUST_PROXY=1 club-ops
-```
-Without Docker: build the frontend as above, then start with `NODE_ENV=production`, `ORGANIZER_KEY`, `PASS_SECRET` and `DB_FILE` set.
-
-- With `NODE_ENV=production` the server **refuses to start** if `ORGANIZER_KEY` or `PASS_SECRET` is missing or still a demo value.
-- Mount a persistent disk for the database (`DB_FILE=/data/club.db` in the image) and run exactly **one** instance.
-- Set `TRUST_PROXY=1` behind one reverse proxy so rate limits see real client addresses.
-- The container runs `seed` on start, which does nothing once the database has events.
-
-### Testing
-```bash
-npm test                              # backend: 97 tests (API, units, flows, assistant); uses temporary databases
-node tools/persistence-check.mjs      # 9 checks: data survives a restart and a crash
-```
-Browser suites (need Playwright, which is not a project dependency, and a server on a freshly seeded database serving `web/dist`): `tools/browser-3b.mjs` (public flows, 57 checks), `browser-3b-audit.mjs` (8), `browser-3c.mjs` (organizer dashboard and registrations, 61), `browser-3e.mjs` (fest and event management, 40), `browser-3f.mjs` (assistant, 27), `browser-3g.mjs` (layout, branding, accessibility, 49). How to run them is in `AI_HANDOFF.md`. All passed on 8 October 2026 against a test bundle of this source (see "Known limitations" for what that does and does not cover).
-
-`tools/build-preview.mjs` builds `preview.html`, a single clickable file of the whole app on sample data, for demos without a server.
-
-### Data model
-`clubs` > `fests` > `events` > `registrations` > `passes`, plus `volunteers`. The demo catalogue is in `server/seed-data.js` (16 DRMC clubs with sample fests and events). The schema is tabulated in `PHASE3_STATUS.md`.
-
-### Project layout
-```
-server/   domain/ (rules: registration, pass, intake, csv, assistant)   repository/ (SQL)   services/   http/ (router, rate limit, static, routes)
-          ai/ (optional assistant helper)   db.js   config.js   seed.js   seed-data.js   tests (test*.js)
-web/      React app: src/pages, src/components, src/layouts, src/lib, src/styles, src/assets
-public/   earlier zero-build interface, served only when web/dist is missing
-tools/    browser suites, persistence check, preview builder
-docs/     screenshots/, architecture/ (ADRs), design-system.md
+```text
+DRMC IT Club
+ └── Tech Carnival 2026
+      ├── Programming Contest
+      ├── AI Web Development Contest
+      ├── Robotics Challenge
+      └── Gaming Tournament
 ```
 
-## 6. Deployment URL
-Not deployed yet.
+Students can discover events and register without creating an account.
 
-## 7. Demo credentials
-Organizer key for local development: `demo-organizer-key` (Organizer > sign in). It is a placeholder, and the server will not start in production with it. Participants need no login.
+Organizers can create fests and events, design registration forms, manage participants, control registration status, and monitor event activity from one organizer console.
 
-## 8. Third-party services/APIs
-None are required at runtime: no external database, authentication, email, analytics, font or CDN service. Fonts are bundled with the app.
+---
 
-Optional: the Tech Guide can call an AI provider with an OpenAI-compatible "chat completions" endpoint if `AI_API_KEY` and `AI_MODEL` are set on the server (`AI_BASE_URL` selects the provider). It is off by default, the key never reaches the browser, and no key is included in this repository. This helper has not been tested against a real provider.
+## Why Smart Club Operations?
 
-## 9. AI tools/features used
-- **In the product:** Tech Guide, the event assistant described above.
-- **In development:** Claude (Anthropic) was used throughout: scoping the original plan, writing the server, the React frontend, the QR encoder, the assistant and the tests, reviewing the work, and triaging an external AI code review (see `docs/CODE_REVIEW_TRIAGE.md`). The UI/UX Pro Max design skill was consulted during the interface polish; what was adopted and what was rejected is recorded in `docs/design-system.md`. Generated code was checked by running the automated tests and by driving the real pages in a headless browser.
+Traditional club event workflows can become fragmented:
 
-## 10. Screenshots
-Taken on 8 October 2026 from the current build (React frontend, Phase 3G design, seeded demo data). All files are in `docs/screenshots/`.
+- Google Forms for registration
+- Spreadsheets for participants
+- Separate pages or posts for event information
+- Manual approval processes
+- Manual participant tracking
+- No unified registration history
+- No dedicated digital pass
 
-**Public site**
+Smart Club Operations combines these workflows into one application.
 
-![Home: hero with live figures, open events, fests and the footer](docs/screenshots/home.png)
-![Events directory with search, filters and event cards](docs/screenshots/events.png)
-![Fest page with its events](docs/screenshots/fest.png)
-![Event details with the facts card and Register button](docs/screenshots/event-details.png)
+### Core goals
+
+- Make event discovery simple.
+- Replace third-party registration forms.
+- Give organizers one management console.
+- Make registration status and capacity reliable.
+- Give every registration a digital pass.
+- Provide useful event information from live application data.
+- Work responsively across phones, tablets, and desktops.
+
+---
+
+# Features
+
+## Student Experience
+
+### Event Discovery
+
+- Home page with current event and fest information.
+- Event directory with search.
+- Club and category filtering.
+- Registration-status indicators.
+- Shareable URL filters.
+- Club and fest pages.
+
+### Event Details
+
+Each event provides:
+
+- Description
+- Date
+- Time
+- Venue
+- Available seats
+- Registration deadline
+- Registration state
+- Rules
+- Registration requirements
+
+### Dynamic Registration
+
+Organizers can design the registration form for each event.
+
+Supported question types include:
+
+- Short text
+- Long text
+- Number
+- Email
+- Phone
+- Dropdown
+
+Questions can be required or optional.
+
+The server enforces:
+
+- Registration deadlines
+- Seat limits
+- Duplicate registration prevention
+- Registration state
+- Event capacity
+
+### Registration & Digital Pass
+
+Depending on the event configuration, registrations can be confirmed immediately or require organizer approval.
+
+A confirmed registration produces a digital entry pass containing:
+
+- Registration status
+- Event information
+- Pass information
+- QR code
+
+Passes are generated from server-side registration data and can be revoked when the associated registration is rejected or cancelled.
+
+### My Registrations
+
+Participants can access registrations created on their current device.
+
+They can:
+
+- View registration status
+- View their digital pass
+- Check event information
+- Cancel eligible registrations
+
+### Volunteer Applications
+
+Students can also submit volunteer applications through the platform.
+
+### Gallery
+
+The public site includes a responsive photo gallery with:
+
+- Slideshow navigation
+- Previous/next controls
+- Keyboard controls
+- Mobile swipe support
+- Fullscreen mode
+- Reduced-motion support
+
+---
+
+# Organizer Console
+
+Organizers access a dedicated management interface.
+
+## Dashboard
+
+The dashboard provides an overview of:
+
+- Pending registrations
+- Confirmed registrations
+- Checked-in participants
+- Seats taken
+- Recent registrations
+- Upcoming events
+
+## Fest Management
+
+Organizers can:
+
+- Create fests
+- Edit fests
+- Archive fests
+- Restore fests
+- Delete eligible fests
+- View events belonging to a fest
+
+## Event Management
+
+Organizers can:
+
+- Create events
+- Edit events
+- Archive events
+- Restore events
+- Delete eligible events
+- Configure capacity
+- Configure registration deadlines
+- Choose instant or approval-based registration
+- Configure event rules
+- Build registration forms
+
+## Registration Form Builder
+
+The form builder allows organizers to:
+
+- Add questions
+- Remove questions
+- Reorder questions
+- Select answer types
+- Mark questions as required
+- Configure dropdown choices
+- Preview the participant form
+
+The public registration page uses the saved form definition.
+
+## Participant Management
+
+Organizers can:
+
+- Search participants
+- Filter registrations
+- Filter by event
+- Filter by registration status
+- Approve registrations
+- Reject registrations
+- Cancel registrations
+- Mark participants as checked in
+- View submitted answers
+- Export event registrations as CSV
+
+## Volunteer Management
+
+Organizers can review submitted volunteer applications and contact applicants using the information they provided.
+
+---
+
+# Tech Guide
+
+Smart Club Operations includes **Tech Guide**, a read-only event assistant available throughout the public site.
+
+Tech Guide can answer questions such as:
+
+- What events are open?
+- When is an event?
+- Where is an event?
+- How many seats are left?
+- When does registration close?
+- What events are happening this week?
+- What events are in a particular fest?
+- Which programming or coding events are available?
+
+### Grounded responses
+
+Tech Guide answers from the application's published event data.
+
+It does not invent events, dates, venues, or participant information.
+
+For example, when an unknown event is requested, it responds that it could not find the requested information rather than generating fictional details.
+
+### Privacy
+
+Tech Guide is read-only and does not expose:
+
+- Participant names
+- Participant emails
+- Organizer credentials
+- Private registration information
+- Database contents
+- Internal system information
+
+### AI architecture
+
+The assistant works without an external AI provider.
+
+The default interpreter is rule-based and operates through:
+
+```text
+AssistantWidget
+      ↓
+API
+      ↓
+Assistant domain logic
+      ↓
+Public event data
+      ↓
+Validated response
+```
+
+An optional OpenAI-compatible AI provider can be enabled through server-side environment variables to interpret unusual phrasing.
+
+The optional provider is:
+
+- Disabled by default
+- Server-side only
+- Not given participant/private data
+- Validated before its interpretation is used
+
+---
+
+# Design & User Experience
+
+The final interface was redesigned around a modern technical visual language for DRMC IT Club.
+
+### Design characteristics
+
+- Dark teal / black foundation
+- Cyan, emerald and lime accents
+- Glass-style interface panels
+- Technical visual patterns
+- Club-first branding
+- Responsive event cards
+- Ticket-style registration passes
+- Clear registration states
+- Strong keyboard focus states
+- Reduced-motion support
+- Touch-friendly controls
+
+The interface was tested at:
+
+```text
+320px
+375px
+768px
+1024px
+1440px
+```
+
+The current screenshot set is available in [`docs/screenshots/`](docs/screenshots/).
+
+---
+
+## Screenshots
+
+### Public Experience
+
+#### Home
+
+![Smart Club Operations home page](docs/screenshots/home.png)
+
+#### Event Directory
+
+![Event directory](docs/screenshots/events.png)
+
+#### Fest
+
+![Fest page](docs/screenshots/fest.png)
+
+#### Event Details
+
+![Event details](docs/screenshots/event-details.png)
+
+#### Registration
+
 ![Registration form](docs/screenshots/registration.png)
-![Registration confirmation: the entry pass with its QR code](docs/screenshots/pass.png)
+
+#### Digital Pass
+
+![Digital registration pass](docs/screenshots/pass.png)
+
+#### My Registrations
+
 ![My registrations](docs/screenshots/my-registrations.png)
-![Gallery](docs/screenshots/gallery.png)
-![Tech Guide, the event assistant, answering from the live event data](docs/screenshots/tech-guide.png)
 
-**Organizer**
+#### Gallery
 
-![Organizer sign in](docs/screenshots/organizer-login.png)
+![Club gallery](docs/screenshots/gallery.png)
+
+#### Tech Guide
+
+![Tech Guide AI assistant](docs/screenshots/tech-guide.png)
+
+---
+
+## Organizer Experience
+
+![Organizer login](docs/screenshots/organizer-login.png)
+
 ![Organizer dashboard](docs/screenshots/organizer-dashboard.png)
-![Organizer events management](docs/screenshots/organizer-events.png)
-![Managing one event: details, seats and its registration form](docs/screenshots/organizer-event.png)
-![Registrations list with approve and view actions](docs/screenshots/organizer-registrations.png)
+
+![Organizer event management](docs/screenshots/organizer-events.png)
+
+![Organizer event administration](docs/screenshots/organizer-event.png)
+
+![Organizer registrations](docs/screenshots/organizer-registrations.png)
+
 ![Registration form builder](docs/screenshots/organizer-form-builder.png)
 
-**Phone (390px wide)**
+---
 
-<img src="docs/screenshots/mobile-home.png" width="240" alt="Home on a phone"> <img src="docs/screenshots/mobile-events.png" width="240" alt="Events on a phone"> <img src="docs/screenshots/mobile-event-details.png" width="240" alt="Event details on a phone">
+## Mobile Experience
 
-<img src="docs/screenshots/mobile-menu.png" width="240" alt="Menu on a phone"> <img src="docs/screenshots/mobile-tech-guide.png" width="240" alt="Tech Guide on a phone"> <img src="docs/screenshots/mobile-organizer-dashboard.png" width="240" alt="Organizer dashboard on a phone">
+The interface was also tested for phone-sized layouts.
 
-<img src="docs/screenshots/mobile-pass.png" width="240" alt="Entry pass on a phone"> <img src="docs/screenshots/mobile-footer.png" width="240" alt="Footer on a phone">
+<img src="docs/screenshots/mobile-home.png" width="240" alt="Screenshot of the Smart Club Operations home page on a phone."> <img src="docs/screenshots/mobile-events.png" width="240" alt="Screenshot of the event directory on a phone."> <img src="docs/screenshots/mobile-event-details.png" width="240" alt="Screenshot of event details on a phone.">
 
-Note: these were captured from a build without the bundled web fonts, so headings appear in the fallback typeface rather than Orbitron. Retake them after `npm run web:install && npm run web:build` if the heading font matters for the submission.
+<img src="docs/screenshots/mobile-menu.png" width="240" alt="Screenshot of the mobile navigation menu."> <img src="docs/screenshots/mobile-tech-guide.png" width="240" alt="Screenshot of Tech Guide on a phone."> <img src="docs/screenshots/mobile-organizer-dashboard.png" width="240" alt="Screenshot of the organizer dashboard on a phone.">
 
-## 11. Known limitations
-- **Check-in:** there is no QR scanner screen yet (the Check-in page is a placeholder). Organizers mark a participant as checked in from the registration's detail view; the pass check-in API exists.
-- **Organizer access** is one shared key, not individual accounts.
-- **Participant identity** is a private link stored in the browser. Clearing browser data loses access unless the link was saved. There are no email notifications.
-- **SQLite** needs a persistent disk and a single running instance. The rate limiter is in memory, per instance.
-- **Tech Guide** understands English questions about events, fests and clubs only; it does not hold a general conversation.
-- **Gallery** photos are files in the source (`web/src/gallery/albums.js`); there is no image upload.
-- **Verification gaps:** at the time of packaging the production Vite build had not been run, because the development environment could not reach the npm registry. All browser testing used an esbuild bundle of the same source without the web fonts, in headless Chromium only. Run `npm run web:install && npm run web:build` and check the site (especially Orbitron headings on small phones) before deploying. Firefox, Safari, real phones and screen readers have not been tested.
-- The club logo file is low resolution with a dark background baked in; a transparent version would look cleaner.
-- The QR encoder supports pass tokens up to 106 bytes (current tokens are about 35).
+<img src="docs/screenshots/mobile-pass.png" width="240" alt="Screenshot of a digital pass on a phone."> <img src="docs/screenshots/mobile-footer.png" width="240" alt="Screenshot of the mobile footer.">
 
-## 12. License
-MIT, see [LICENSE](LICENSE).
+---
+
+# Technology Stack
+
+## Frontend
+
+- React 19
+- Vite
+- Plain CSS
+- CSS design tokens
+- History API routing
+- Inline SVG icons
+- Self-hosted Inter and Orbitron fonts through `@fontsource`
+
+No UI framework or Tailwind CSS is used.
+
+## Backend
+
+- Node.js 22.13+
+- Native Node HTTP server
+- No backend framework
+- Layered architecture
+
+```text
+HTTP / Routes
+      ↓
+Services
+      ↓
+Repositories
+      ↓
+SQLite Database
+```
+
+Domain rules are kept separate from persistence and HTTP handling.
+
+## Database
+
+- SQLite
+- Node's built-in `node:sqlite`
+- Persistent database file
+- WAL mode
+- Ordered migrations
+- Database location configurable through `DB_FILE`
+
+Default:
+
+```text
+./club.db
+```
+
+## QR
+
+The project contains an in-house QR encoder and does not require a third-party QR package.
+
+---
+
+# Project Architecture
+
+```text
+server/
+├── domain/
+│   ├── registration
+│   ├── pass
+│   ├── intake
+│   ├── csv
+│   └── assistant
+│
+├── repository/
+│   └── SQL data access
+│
+├── services/
+│   └── application services
+│
+├── http/
+│   ├── routes
+│   └── router
+│
+├── ai/
+│   └── optional assistant provider
+│
+├── db.js
+├── config.js
+├── seed.js
+└── seed-data.js
+
+web/
+└── src/
+    ├── pages/
+    ├── components/
+    ├── layouts/
+    ├── lib/
+    ├── styles/
+    └── assets/
+
+tools/
+├── browser tests
+├── persistence checks
+└── preview builder
+
+docs/
+├── screenshots/
+├── architecture/
+└── design-system.md
+```
+
+Architecture decisions are documented in:
+
+- [`ADR-001 — Zero Dependencies`](docs/architecture/adr-001-zero-dependencies.md)
+- [`ADR-002 — SQLite on Persistent Disk`](docs/architecture/adr-002-sqlite-persistent-disk.md)
+- [`ADR-003 — Capability Token Identity`](docs/architecture/adr-003-capability-token-identity.md)
+- [`Design System`](docs/design-system.md)
+
+---
+
+# Getting Started
+
+## Requirements
+
+- Node.js **22.13 or newer**
+- npm
+
+## 1. Install frontend dependencies
+
+From the project root:
+
+```bash
+npm run web:install
+```
+
+## 2. Build the current frontend
+
+```bash
+npm run web:build
+```
+
+> **Important:** Run `npm run web:install` and `npm run web:build` before `npm start`. The current React interface is served from `web/dist`.
+
+## 3. Seed demo data
+
+For a fresh local database:
+
+```bash
+npm run seed
+```
+
+The seed command only populates an empty database. It does not wipe existing registrations.
+
+## 4. Start the application
+
+```bash
+npm start
+```
+
+The application will be available at:
+
+```text
+http://localhost:3000
+```
+
+### Development mode
+
+Run the backend:
+
+```bash
+npm start
+```
+
+Then run the Vite development server separately:
+
+```bash
+npm run web:dev
+```
+
+The frontend development server runs on port `5173` and proxies API requests to the backend.
+
+---
+
+# Environment Configuration
+
+Settings are environment variables. [`.env.example`](.env.example) lists all of them with their defaults.
+
+The server does not read a `.env` file by itself. Either set the variables in your shell or hosting dashboard, or copy the example and pass the file to Node when starting:
+
+```bash
+cp .env.example .env
+node --env-file=.env --no-warnings server/index.js
+```
+
+Available configuration includes:
+
+- Server port
+- Database path
+- Organizer key
+- Pass signing secret
+- Proxy configuration
+- Rate limits
+- Optional AI assistant configuration
+
+### Production secrets
+
+Production requires real values for:
+
+```text
+ORGANIZER_KEY
+PASS_SECRET
+```
+
+The production server refuses to start when required secrets are missing or still using demo values.
+
+Never commit `.env` or real API keys to GitHub.
+
+---
+
+# Demo Credentials
+
+Participants need no login.
+
+The organizer console is opened with an organizer key (**Organizer** in the site menu):
+
+- **Running locally:** `demo-organizer-key`. This placeholder is refused in production.
+- **Deployed site:** _to be added here together with the deployment URL._
+
+---
+
+# Demo Data
+
+The project includes sample data for evaluation.
+
+The seed catalogue contains sample DRMC clubs, fests and events so judges can explore the application without having to create the entire system from scratch.
+
+To seed an empty local database:
+
+```bash
+npm run seed
+```
+
+To intentionally reset and reseed a local development database:
+
+```bash
+npm run seed:reset
+```
+
+> `seed:reset` is destructive and is refused in production.
+
+---
+
+# Testing
+
+The project contains backend, persistence and browser-level test suites.
+
+### Backend
+
+```bash
+npm test
+```
+
+Latest verified result:
+
+```text
+97 / 97
+```
+
+### Persistence
+
+```bash
+node tools/persistence-check.mjs
+```
+
+Latest verified result:
+
+```text
+9 / 9
+```
+
+### Browser suites
+
+The latest verified results are:
+
+| Suite | Result |
+|---|---:|
+| Browser 3B | 57 / 57 |
+| Browser 3B Audit | 8 / 8 |
+| Browser 3C | 61 / 61 |
+| Browser 3E | 40 / 40 |
+| Browser 3F | 27 / 27 |
+| Browser 3G | 49 / 49 |
+| Preview | 9 / 9 |
+
+The browser suites were run against the current application source using headless Chromium.
+
+---
+
+# Deployment
+
+The application can be deployed using Docker or a Node.js environment.
+
+## Docker
+
+Build:
+
+```bash
+docker build -t smart-club-ops .
+```
+
+Run:
+
+```bash
+docker run -p 3000:3000 \
+  -v club-data:/data \
+  -e NODE_ENV=production \
+  -e ORGANIZER_KEY="YOUR_LONG_RANDOM_KEY" \
+  -e PASS_SECRET="YOUR_LONG_RANDOM_SECRET" \
+  -e TRUST_PROXY=1 \
+  -e DB_FILE=/data/club.db \
+  smart-club-ops
+```
+
+### Production database
+
+SQLite requires persistent storage.
+
+For a hosted deployment:
+
+- Use a persistent disk/volume.
+- Set `DB_FILE` to the persistent location.
+- Run a single application instance for this SQLite architecture.
+- Do not use an ephemeral filesystem for the production database.
+
+---
+
+# Security & Privacy
+
+The application includes:
+
+- Input validation
+- Public-write rate limiting
+- Assistant rate limiting
+- Organizer-route rate limiting
+- Wrong-key throttling
+- Content Security Policy
+- Server-side secrets
+- Parameterized database operations
+- Pagination
+- Public/private data separation
+- Read-only AI assistant access to public catalogue data
+
+Participant information is not exposed through the public Tech Guide.
+
+---
+
+# Third-Party Services / APIs
+
+None are required at runtime: no external database, authentication, email, analytics, font or CDN service. Fonts are bundled with the application.
+
+Optional: Tech Guide can call an AI provider with an OpenAI-compatible "chat completions" endpoint when `AI_API_KEY` and `AI_MODEL` are set on the server. It is off by default and no key is included in this repository.
+
+---
+
+# AI-Assisted Development
+
+AI tools were used during development.
+
+### Product AI
+
+The application includes **Tech Guide**, the read-only event assistant described above.
+
+### Development workflow
+
+Claude was used as an AI-assisted development tool throughout the project for:
+
+- Project planning
+- Backend implementation
+- Frontend implementation
+- Testing
+- Debugging
+- UI/UX refinement
+- Assistant implementation
+- Code review and issue triage
+
+The UI/UX Pro Max design skill was also consulted during the visual redesign.
+
+The implementation was validated through automated tests and browser-based testing rather than relying solely on generated code.
+
+---
+
+# Known Limitations
+
+### QR scanner
+
+A dedicated QR scanner/check-in screen is **not implemented**.
+
+Organizers can mark participants as checked in from the registration management interface, and the pass/check-in API exists.
+
+### Organizer authentication
+
+Organizer access currently uses a shared organizer key rather than individual organizer accounts.
+
+### Participant identity
+
+Participants access their registrations through a private browser-stored link/token.
+
+Clearing browser data can remove convenient access unless the registration link has been saved.
+
+Email notifications are not implemented.
+
+### SQLite deployment
+
+The application uses SQLite and therefore requires:
+
+- Persistent storage
+- One running application instance for the database
+
+The in-memory rate limiter is per application instance.
+
+### Tech Guide
+
+Tech Guide is intentionally focused on event, fest and club information.
+
+It is not a general-purpose conversational AI.
+
+### Gallery
+
+Gallery images are stored with the application source. There is no organizer image-upload system.
+
+### Browser coverage
+
+The verified browser testing was performed with headless Chromium.
+
+Firefox, Safari, real mobile devices and screen-reader testing were not part of the final verification suite.
+
+### Production build verification
+
+The final production Vite build must be verified in an environment that can install the frontend dependencies.
+
+---
+
+# Submission Information
+
+**Project:** Smart Club Operations Platform
+
+**Organization:** DRMC IT Club
+
+**Repository:**  
+`https://github.com/yunuszoro46-sketch/9th-DRMC-International-Tech-Carnival-2026-`
+
+**Deployment URL:**  
+_Not deployed yet._
+
+Once the production deployment is available, the deployment URL should be added here.
+
+---
+
+# Documentation
+
+Additional project documentation:
+
+- [`Phase 3 Status`](PHASE3_STATUS.md)
+- [`AI Handoff`](AI_HANDOFF.md)
+- [`Design System`](docs/design-system.md)
+- [`Architecture Decisions`](docs/architecture/)
+- [`Screenshots`](docs/screenshots/)
+
+---
+
+# License
+
+This project is licensed under the **MIT License**.
+
+See [`LICENSE`](LICENSE) for the complete license text.
+
+---
+
+# Organizing Authority Statement
+
+This project was developed as a submission for the **DRMC IT Club Smart Club Operations** challenge/theme.
+
+The project is intended to demonstrate a complete, practical club-event management workflow covering event discovery, registration, organizer management, digital passes and AI-assisted event information.
