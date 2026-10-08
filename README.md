@@ -622,7 +622,7 @@ Participants need no login.
 The organizer console is opened with an organizer key (**Organizer** in the site menu):
 
 - **Running locally:** `demo-organizer-key`. This placeholder is refused in production.
-- **Deployed site:** _to be added here together with the deployment URL._
+- **Deployed site:** `ORGANIZER_KEY_HERE`
 
 ---
 
@@ -832,10 +832,6 @@ The verified browser testing was performed with headless Chromium.
 
 Firefox, Safari, real mobile devices and screen-reader testing were not part of the final verification suite.
 
-### Production build verification
-
-The final production Vite build must be verified in an environment that can install the frontend dependencies.
-
 ---
 
 # Submission Information
@@ -848,9 +844,9 @@ The final production Vite build must be verified in an environment that can inst
 `https://github.com/yunuszoro46-sketch/9th-DRMC-International-Tech-Carnival-2026-`
 
 **Deployment URL:**  
-_Not deployed yet._
+**[https://nineth-drmc-international-tech-carnival.onrender.com/](https://nineth-drmc-international-tech-carnival.onrender.com/)**
 
-Once the production deployment is available, the deployment URL should be added here.
+Hosted on Render's free tier with the sample data loaded. After a period without visitors the first page load can take up to about a minute while the service wakes up, and the data returns to the sample catalogue whenever the service restarts.
 
 ---
 
