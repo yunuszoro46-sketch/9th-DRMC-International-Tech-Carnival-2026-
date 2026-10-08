@@ -13,7 +13,13 @@
 
 ---
 
-## Overview
+## 1. Project Name
+
+**Smart Club Operations Platform** (Smart Club Ops), built for the **DRMC IT Club**.
+
+---
+
+## 2. Project Description
 
 Student clubs often depend on Google Forms, spreadsheets, messaging apps, and manual processes to organize events.
 
@@ -46,7 +52,7 @@ Organizers can create fests and events, design registration forms, manage partic
 
 ---
 
-## Why Smart Club Operations?
+### Why Smart Club Operations?
 
 Traditional club event workflows can become fragmented:
 
@@ -60,7 +66,7 @@ Traditional club event workflows can become fragmented:
 
 Smart Club Operations combines these workflows into one application.
 
-### Core goals
+#### Core goals
 
 - Make event discovery simple.
 - Replace third-party registration forms.
@@ -72,11 +78,11 @@ Smart Club Operations combines these workflows into one application.
 
 ---
 
-# Features
+## 3. Features
 
-## Student Experience
+### Student Experience
 
-### Event Discovery
+#### Event Discovery
 
 - Home page with current event and fest information.
 - Event directory with search.
@@ -85,7 +91,7 @@ Smart Club Operations combines these workflows into one application.
 - Shareable URL filters.
 - Club and fest pages.
 
-### Event Details
+#### Event Details
 
 Each event provides:
 
@@ -99,7 +105,7 @@ Each event provides:
 - Rules
 - Registration requirements
 
-### Dynamic Registration
+#### Dynamic Registration
 
 Organizers can design the registration form for each event.
 
@@ -122,7 +128,7 @@ The server enforces:
 - Registration state
 - Event capacity
 
-### Registration & Digital Pass
+#### Registration & Digital Pass
 
 Depending on the event configuration, registrations can be confirmed immediately or require organizer approval.
 
@@ -135,7 +141,7 @@ A confirmed registration produces a digital entry pass containing:
 
 Passes are generated from server-side registration data and can be revoked when the associated registration is rejected or cancelled.
 
-### My Registrations
+#### My Registrations
 
 Participants can access registrations created on their current device.
 
@@ -146,11 +152,11 @@ They can:
 - Check event information
 - Cancel eligible registrations
 
-### Volunteer Applications
+#### Volunteer Applications
 
 Students can also submit volunteer applications through the platform.
 
-### Gallery
+#### Gallery
 
 The public site includes a responsive photo gallery with:
 
@@ -161,13 +167,11 @@ The public site includes a responsive photo gallery with:
 - Fullscreen mode
 - Reduced-motion support
 
----
-
-# Organizer Console
+### Organizer Console
 
 Organizers access a dedicated management interface.
 
-## Dashboard
+#### Dashboard
 
 The dashboard provides an overview of:
 
@@ -178,7 +182,7 @@ The dashboard provides an overview of:
 - Recent registrations
 - Upcoming events
 
-## Fest Management
+#### Fest Management
 
 Organizers can:
 
@@ -189,7 +193,7 @@ Organizers can:
 - Delete eligible fests
 - View events belonging to a fest
 
-## Event Management
+#### Event Management
 
 Organizers can:
 
@@ -204,7 +208,7 @@ Organizers can:
 - Configure event rules
 - Build registration forms
 
-## Registration Form Builder
+#### Registration Form Builder
 
 The form builder allows organizers to:
 
@@ -218,7 +222,7 @@ The form builder allows organizers to:
 
 The public registration page uses the saved form definition.
 
-## Participant Management
+#### Participant Management
 
 Organizers can:
 
@@ -233,13 +237,11 @@ Organizers can:
 - View submitted answers
 - Export event registrations as CSV
 
-## Volunteer Management
+#### Volunteer Management
 
 Organizers can review submitted volunteer applications and contact applicants using the information they provided.
 
----
-
-# Tech Guide
+### Tech Guide (AI Assistant)
 
 Smart Club Operations includes **Tech Guide**, a read-only event assistant available throughout the public site.
 
@@ -254,7 +256,7 @@ Tech Guide can answer questions such as:
 - What events are in a particular fest?
 - Which programming or coding events are available?
 
-### Grounded responses
+#### Grounded responses
 
 Tech Guide answers from the application's published event data.
 
@@ -262,7 +264,7 @@ It does not invent events, dates, venues, or participant information.
 
 For example, when an unknown event is requested, it responds that it could not find the requested information rather than generating fictional details.
 
-### Privacy
+#### Privacy
 
 Tech Guide is read-only and does not expose:
 
@@ -273,7 +275,7 @@ Tech Guide is read-only and does not expose:
 - Database contents
 - Internal system information
 
-### AI architecture
+#### AI architecture
 
 The assistant works without an external AI provider.
 
@@ -300,13 +302,11 @@ The optional provider is:
 - Not given participant/private data
 - Validated before its interpretation is used
 
----
-
-# Design & User Experience
+### Design & User Experience
 
 The final interface was redesigned around a modern technical visual language for DRMC IT Club.
 
-### Design characteristics
+#### Design characteristics
 
 - Dark teal / black foundation
 - Cyan, emerald and lime accents
@@ -332,81 +332,29 @@ The interface was tested at:
 
 The current screenshot set is available in [`docs/screenshots/`](docs/screenshots/).
 
----
+### Security & Privacy
 
-## Screenshots
+The application includes:
 
-### Public Experience
+- Input validation
+- Public-write rate limiting
+- Assistant rate limiting
+- Organizer-route rate limiting
+- Wrong-key throttling
+- Content Security Policy
+- Server-side secrets
+- Parameterized database operations
+- Pagination
+- Public/private data separation
+- Read-only AI assistant access to public catalogue data
 
-#### Home
-
-![Smart Club Operations home page](docs/screenshots/home.png)
-
-#### Event Directory
-
-![Event directory](docs/screenshots/events.png)
-
-#### Fest
-
-![Fest page](docs/screenshots/fest.png)
-
-#### Event Details
-
-![Event details](docs/screenshots/event-details.png)
-
-#### Registration
-
-![Registration form](docs/screenshots/registration.png)
-
-#### Digital Pass
-
-![Digital registration pass](docs/screenshots/pass.png)
-
-#### My Registrations
-
-![My registrations](docs/screenshots/my-registrations.png)
-
-#### Gallery
-
-![Club gallery](docs/screenshots/gallery.png)
-
-#### Tech Guide
-
-![Tech Guide AI assistant](docs/screenshots/tech-guide.png)
+Participant information is not exposed through the public Tech Guide.
 
 ---
 
-## Organizer Experience
+## 4. Tech Stack
 
-![Organizer login](docs/screenshots/organizer-login.png)
-
-![Organizer dashboard](docs/screenshots/organizer-dashboard.png)
-
-![Organizer event management](docs/screenshots/organizer-events.png)
-
-![Organizer event administration](docs/screenshots/organizer-event.png)
-
-![Organizer registrations](docs/screenshots/organizer-registrations.png)
-
-![Registration form builder](docs/screenshots/organizer-form-builder.png)
-
----
-
-## Mobile Experience
-
-The interface was also tested for phone-sized layouts.
-
-<img src="docs/screenshots/mobile-home.png" width="240" alt="Screenshot of the Smart Club Operations home page on a phone."> <img src="docs/screenshots/mobile-events.png" width="240" alt="Screenshot of the event directory on a phone."> <img src="docs/screenshots/mobile-event-details.png" width="240" alt="Screenshot of event details on a phone.">
-
-<img src="docs/screenshots/mobile-menu.png" width="240" alt="Screenshot of the mobile navigation menu."> <img src="docs/screenshots/mobile-tech-guide.png" width="240" alt="Screenshot of Tech Guide on a phone."> <img src="docs/screenshots/mobile-organizer-dashboard.png" width="240" alt="Screenshot of the organizer dashboard on a phone.">
-
-<img src="docs/screenshots/mobile-pass.png" width="240" alt="Screenshot of a digital pass on a phone."> <img src="docs/screenshots/mobile-footer.png" width="240" alt="Screenshot of the mobile footer.">
-
----
-
-# Technology Stack
-
-## Frontend
+### Frontend
 
 - React 19
 - Vite
@@ -418,7 +366,7 @@ The interface was also tested for phone-sized layouts.
 
 No UI framework or Tailwind CSS is used.
 
-## Backend
+### Backend
 
 - Node.js 22.13+
 - Native Node HTTP server
@@ -437,7 +385,7 @@ SQLite Database
 
 Domain rules are kept separate from persistence and HTTP handling.
 
-## Database
+### Database
 
 - SQLite
 - Node's built-in `node:sqlite`
@@ -452,13 +400,11 @@ Default:
 ./club.db
 ```
 
-## QR
+### QR
 
 The project contains an in-house QR encoder and does not require a third-party QR package.
 
----
-
-# Project Architecture
+### Project Architecture
 
 ```text
 server/
@@ -516,14 +462,14 @@ Architecture decisions are documented in:
 
 ---
 
-# Getting Started
+## 5. Setup Instructions
 
-## Requirements
+### Requirements
 
 - Node.js **22.13 or newer**
 - npm
 
-## 1. Install frontend dependencies
+### 1. Install frontend dependencies
 
 From the project root:
 
@@ -531,7 +477,7 @@ From the project root:
 npm run web:install
 ```
 
-## 2. Build the current frontend
+### 2. Build the current frontend
 
 ```bash
 npm run web:build
@@ -539,7 +485,7 @@ npm run web:build
 
 > **Important:** Run `npm run web:install` and `npm run web:build` before `npm start`. The current React interface is served from `web/dist`.
 
-## 3. Seed demo data
+### 3. Seed demo data
 
 For a fresh local database:
 
@@ -549,7 +495,7 @@ npm run seed
 
 The seed command only populates an empty database. It does not wipe existing registrations.
 
-## 4. Start the application
+### 4. Start the application
 
 ```bash
 npm start
@@ -561,7 +507,7 @@ The application will be available at:
 http://localhost:3000
 ```
 
-### Development mode
+#### Development mode
 
 Run the backend:
 
@@ -577,9 +523,7 @@ npm run web:dev
 
 The frontend development server runs on port `5173` and proxies API requests to the backend.
 
----
-
-# Environment Configuration
+### Environment Configuration
 
 Settings are environment variables. [`.env.example`](.env.example) lists all of them with their defaults.
 
@@ -600,7 +544,7 @@ Available configuration includes:
 - Rate limits
 - Optional AI assistant configuration
 
-### Production secrets
+#### Production secrets
 
 Production requires real values for:
 
@@ -613,20 +557,7 @@ The production server refuses to start when required secrets are missing or stil
 
 Never commit `.env` or real API keys to GitHub.
 
----
-
-# Demo Credentials
-
-Participants need no login.
-
-The organizer console is opened with an organizer key (**Organizer** in the site menu):
-
-- **Running locally:** `demo-organizer-key`. This placeholder is refused in production.
-- **Deployed site:** `ORGANIZER_KEY_HERE`
-
----
-
-# Demo Data
+### Demo Data
 
 The project includes sample data for evaluation.
 
@@ -646,13 +577,11 @@ npm run seed:reset
 
 > `seed:reset` is destructive and is refused in production.
 
----
-
-# Testing
+### Testing
 
 The project contains backend, persistence and browser-level test suites.
 
-### Backend
+#### Backend
 
 ```bash
 npm test
@@ -664,7 +593,7 @@ Latest verified result:
 97 / 97
 ```
 
-### Persistence
+#### Persistence
 
 ```bash
 node tools/persistence-check.mjs
@@ -676,7 +605,7 @@ Latest verified result:
 9 / 9
 ```
 
-### Browser suites
+#### Browser suites
 
 The latest verified results are:
 
@@ -692,13 +621,11 @@ The latest verified results are:
 
 The browser suites were run against the current application source using headless Chromium.
 
----
-
-# Deployment
+### Deploying Your Own Copy
 
 The application can be deployed using Docker or a Node.js environment.
 
-## Docker
+#### Docker
 
 Build:
 
@@ -719,7 +646,7 @@ docker run -p 3000:3000 \
   smart-club-ops
 ```
 
-### Production database
+#### Production database
 
 SQLite requires persistent storage.
 
@@ -730,29 +657,40 @@ For a hosted deployment:
 - Run a single application instance for this SQLite architecture.
 - Do not use an ephemeral filesystem for the production database.
 
----
+### Further Documentation
 
-# Security & Privacy
+Additional project documentation:
 
-The application includes:
-
-- Input validation
-- Public-write rate limiting
-- Assistant rate limiting
-- Organizer-route rate limiting
-- Wrong-key throttling
-- Content Security Policy
-- Server-side secrets
-- Parameterized database operations
-- Pagination
-- Public/private data separation
-- Read-only AI assistant access to public catalogue data
-
-Participant information is not exposed through the public Tech Guide.
+- [`Phase 3 Status`](PHASE3_STATUS.md)
+- [`AI Handoff`](AI_HANDOFF.md)
+- [`Design System`](docs/design-system.md)
+- [`Architecture Decisions`](docs/architecture/)
+- [`Screenshots`](docs/screenshots/)
 
 ---
 
-# Third-Party Services / APIs
+## 6. Deployment URL
+
+**[https://nineth-drmc-international-tech-carnival.onrender.com/](https://nineth-drmc-international-tech-carnival.onrender.com/)**
+
+Hosted on Render's free tier with the sample data loaded. After a period without visitors the first page load can take up to about a minute while the service wakes up, and the data returns to the sample catalogue whenever the service restarts.
+
+**Repository:** [github.com/yunuszoro46-sketch/9th-DRMC-International-Tech-Carnival-2026-](https://github.com/yunuszoro46-sketch/9th-DRMC-International-Tech-Carnival-2026-)
+
+---
+
+## 7. Demo Credentials
+
+Participants need no login.
+
+The organizer console is opened with an organizer key (**Organizer** in the site menu):
+
+- **Running locally:** `demo-organizer-key`. This placeholder is refused in production.
+- **Deployed site:** `ORGANIZER_KEY_HERE`
+
+---
+
+## 8. Third-Party Services / APIs
 
 None are required at runtime: no external database, authentication, email, analytics, font or CDN service. Fonts are bundled with the application.
 
@@ -760,7 +698,7 @@ Optional: Tech Guide can call an AI provider with an OpenAI-compatible "chat com
 
 ---
 
-# AI-Assisted Development
+## 9. AI Tools / Features Used
 
 AI tools were used during development.
 
@@ -787,7 +725,73 @@ The implementation was validated through automated tests and browser-based testi
 
 ---
 
-# Known Limitations
+## 10. Screenshots
+
+### Public Experience
+
+#### Home
+
+![Smart Club Operations home page](docs/screenshots/home.png)
+
+#### Event Directory
+
+![Event directory](docs/screenshots/events.png)
+
+#### Fest
+
+![Fest page](docs/screenshots/fest.png)
+
+#### Event Details
+
+![Event details](docs/screenshots/event-details.png)
+
+#### Registration
+
+![Registration form](docs/screenshots/registration.png)
+
+#### Digital Pass
+
+![Digital registration pass](docs/screenshots/pass.png)
+
+#### My Registrations
+
+![My registrations](docs/screenshots/my-registrations.png)
+
+#### Gallery
+
+![Club gallery](docs/screenshots/gallery.png)
+
+#### Tech Guide
+
+![Tech Guide AI assistant](docs/screenshots/tech-guide.png)
+
+### Organizer Experience
+
+![Organizer login](docs/screenshots/organizer-login.png)
+
+![Organizer dashboard](docs/screenshots/organizer-dashboard.png)
+
+![Organizer event management](docs/screenshots/organizer-events.png)
+
+![Organizer event administration](docs/screenshots/organizer-event.png)
+
+![Organizer registrations](docs/screenshots/organizer-registrations.png)
+
+![Registration form builder](docs/screenshots/organizer-form-builder.png)
+
+### Mobile Experience
+
+The interface was also tested for phone-sized layouts.
+
+<img src="docs/screenshots/mobile-home.png" width="240" alt="Screenshot of the Smart Club Operations home page on a phone."> <img src="docs/screenshots/mobile-events.png" width="240" alt="Screenshot of the event directory on a phone."> <img src="docs/screenshots/mobile-event-details.png" width="240" alt="Screenshot of event details on a phone.">
+
+<img src="docs/screenshots/mobile-menu.png" width="240" alt="Screenshot of the mobile navigation menu."> <img src="docs/screenshots/mobile-tech-guide.png" width="240" alt="Screenshot of Tech Guide on a phone."> <img src="docs/screenshots/mobile-organizer-dashboard.png" width="240" alt="Screenshot of the organizer dashboard on a phone.">
+
+<img src="docs/screenshots/mobile-pass.png" width="240" alt="Screenshot of a digital pass on a phone."> <img src="docs/screenshots/mobile-footer.png" width="240" alt="Screenshot of the mobile footer.">
+
+---
+
+## 11. Known Limitations
 
 ### QR scanner
 
@@ -834,35 +838,7 @@ Firefox, Safari, real mobile devices and screen-reader testing were not part of 
 
 ---
 
-# Submission Information
-
-**Project:** Smart Club Operations Platform
-
-**Organization:** DRMC IT Club
-
-**Repository:**  
-`https://github.com/yunuszoro46-sketch/9th-DRMC-International-Tech-Carnival-2026-`
-
-**Deployment URL:**  
-**[https://nineth-drmc-international-tech-carnival.onrender.com/](https://nineth-drmc-international-tech-carnival.onrender.com/)**
-
-Hosted on Render's free tier with the sample data loaded. After a period without visitors the first page load can take up to about a minute while the service wakes up, and the data returns to the sample catalogue whenever the service restarts.
-
----
-
-# Documentation
-
-Additional project documentation:
-
-- [`Phase 3 Status`](PHASE3_STATUS.md)
-- [`AI Handoff`](AI_HANDOFF.md)
-- [`Design System`](docs/design-system.md)
-- [`Architecture Decisions`](docs/architecture/)
-- [`Screenshots`](docs/screenshots/)
-
----
-
-# License
+## 12. License
 
 This project is licensed under the **MIT License**.
 
@@ -870,7 +846,9 @@ See [`LICENSE`](LICENSE) for the complete license text.
 
 ---
 
-# Organizing Authority Statement
+## 13. Organizing Authority
+
+The organizing authority reserves the right to make the final decision regarding rule interpretation, eligibility, judging, scoring, and any matters not explicitly covered in the contest guidelines. All decisions made by the judging panel and organizing authority shall be final.
 
 This project was developed as a submission for the **DRMC IT Club Smart Club Operations** challenge/theme.
 
