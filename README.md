@@ -226,6 +226,7 @@ The public registration page uses the saved form definition.
 
 Organizers can:
 
+- Organizer key : drmc2026
 - Search participants
 - Filter registrations
 - Filter by event
