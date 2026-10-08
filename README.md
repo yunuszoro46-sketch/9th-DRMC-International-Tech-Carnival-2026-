@@ -686,7 +686,7 @@ Participants need no login.
 The organizer console is opened with an organizer key (**Organizer** in the site menu):
 
 - **Running locally:** `demo-organizer-key`. This placeholder is refused in production.
-- **Deployed site:** `ORGANIZER_KEY_HERE`
+- **Deployed site:** `drmc2026`
 
 ---
 
