@@ -540,6 +540,7 @@ Available configuration includes:
 - Server port
 - Database path
 - Organizer key
+- JWT secret and organizer session length
 - Pass signing secret
 - Proxy configuration
 - Rate limits
@@ -552,6 +553,7 @@ Production requires real values for:
 ```text
 ORGANIZER_KEY
 PASS_SECRET
+JWT_SECRET
 ```
 
 The production server refuses to start when required secrets are missing or still using demo values.
@@ -642,6 +644,7 @@ docker run -p 3000:3000 \
   -e NODE_ENV=production \
   -e ORGANIZER_KEY="YOUR_LONG_RANDOM_KEY" \
   -e PASS_SECRET="YOUR_LONG_RANDOM_SECRET" \
+  -e JWT_SECRET="ANOTHER_LONG_RANDOM_SECRET" \
   -e TRUST_PROXY=1 \
   -e DB_FILE=/data/club.db \
   smart-club-ops
@@ -688,6 +691,8 @@ The organizer console is opened with an organizer key (**Organizer** in the site
 
 - **Running locally:** `demo-organizer-key`. This placeholder is refused in production.
 - **Deployed site:** `drmc2026`
+
+Signing in exchanges the key for a JWT (`POST /api/admin/login` with `{"key": "..."}`). Every organizer API call then sends `Authorization: Bearer <token>`. Sessions last 8 hours by default (`JWT_TTL_SEC`).
 
 ---
 
@@ -802,7 +807,7 @@ Organizers can mark participants as checked in from the registration management 
 
 ### Organizer authentication
 
-Organizer access currently uses a shared organizer key rather than individual organizer accounts.
+Organizer access currently uses a shared organizer key rather than individual organizer accounts. The key is sent only once, to sign in; it is exchanged for a short-lived JWT that authorizes every organizer API call.
 
 ### Participant identity
 

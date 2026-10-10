@@ -14,6 +14,10 @@ const ORGANIZER_KEY = 'demo-organizer-key', SECRET = 'preview-secret';
 const KIND_STATUS = { validation: 400, unauthorized: 401, forbidden: 403, not_found: 404, conflict: 409, payload: 413, rate_limited: 429 };
 const SEATS = ['PENDING', 'CONFIRMED', 'CHECKED_IN'];
 const has = (s, q) => String(s || '').toLowerCase().includes(String(q).toLowerCase());
+// Stand-in for the server's organizer JWT: same shape (so the app can read `exp`) but NOT signed, like everything here.
+const b64url = (o) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const sessions = new Set();
+const issueToken = () => { const now = Math.floor(Date.now() / 1000), t = `${b64url({ alg: 'none', typ: 'JWT' })}.${b64url({ role: 'organizer', iat: now, exp: now + 8 * 3600, jti: Math.random().toString(36).slice(2) })}.preview`; sessions.add(t); return t; };
 const sqlNow = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 
 function createMemoryDb() {
@@ -142,14 +146,15 @@ function seed(db, now = new Date()) {
 function createPreviewBackend() {
   const db = createMemoryDb(); seed(db);
   const service = createClubService({ events: db.events, registrations: db.registrations, passes: db.passes, volunteers: db.volunteers, tx: (fn) => fn(), secret: () => SECRET });
-  const routes = [...publicRoutes(service), ...adminRoutes(service)];
-  // Mirrors server/http/router.js: route match, organizer key check, error -> { error, message, ...extra } with the same statuses.
-  return function handle(method, pathAndQuery, body, key) {
+  const auth = { login: (key) => { if (key !== ORGANIZER_KEY) throw Object.assign(new Error("That organizer key wasn't accepted."), { kind: 'unauthorized', code: 'invalid_credentials' }); return { token: issueToken(), token_type: 'Bearer', expires_in: 8 * 3600 }; } };
+  const routes = [...publicRoutes(service), ...adminRoutes(service, auth)];
+  // Mirrors server/http/router.js: route match, organizer bearer-token check, error -> { error, message, ...extra } with the same statuses.
+  return function handle(method, pathAndQuery, body, authorization) {
     const url = new URL(pathAndQuery, 'http://preview');
     for (const r of routes) {
       const m = method === r.method && url.pathname.match(r.pattern);
       if (!m) continue;
-      if (r.admin && key !== ORGANIZER_KEY) return { status: 401, type: 'application/json', body: JSON.stringify({ error: 'unauthorized', message: 'Organizer key required.' }) };
+      if (r.admin && !sessions.has(String(authorization || '').replace(/^Bearer\s+/i, ''))) return { status: 401, type: 'application/json', body: JSON.stringify({ error: 'unauthorized', message: 'Organizer sign-in required.' }) };
       try {
         const out = r.handler({ m, url, body: method === 'GET' ? {} : (body && typeof body === 'object' ? body : {}) });
         return out && out.type ? { status: out.status, type: out.type, body: out.body, headers: out.headers } : { status: 200, type: 'application/json', body: JSON.stringify(out) };

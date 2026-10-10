@@ -1,6 +1,6 @@
 // The only place that talks to the network. Every failure becomes an ApiError {code, message, status, field, kind} so
 // components never parse responses or see "Failed to fetch". `message` is always safe to show to a person.
-import { organizerKey, apiTimeoutMs } from "./storage.js";
+import { organizerToken, apiTimeoutMs } from "./storage.js";
 
 export class ApiError extends Error {
   constructor({ code, message, status = 0, field, kind = "http", data }) { super(message); this.name = "ApiError"; Object.assign(this, { code, status, field, kind, data }); }
@@ -19,7 +19,7 @@ export const AUTH_EXPIRED = "ditc:auth-expired";
 
 // Low level: returns the Response, or throws ApiError for network failures / timeouts. A caller-supplied `signal`
 // that aborts rethrows a plain AbortError (callers treat that as "superseded", never as an error to display).
-async function send(path, { method = "GET", body, admin = false, key, signal, timeout } = {}) {
+async function send(path, { method = "GET", body, admin = false, signal, timeout } = {}) {
   const ctrl = new AbortController();
   let timedOut = false;
   const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, timeout ?? apiTimeoutMs());
@@ -28,7 +28,7 @@ async function send(path, { method = "GET", body, admin = false, key, signal, ti
   try {
     const headers = {};
     if (body !== undefined) headers["content-type"] = "application/json";
-    if (admin) headers["x-organizer-key"] = key ?? organizerKey.get();
+    if (admin) headers.authorization = `Bearer ${organizerToken.get()}`;
     return await fetch("/api" + path, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined, signal: ctrl.signal });
   } catch (e) {
     if (signal?.aborted) throw e;
@@ -44,7 +44,7 @@ async function request(path, opts = {}) {
   try { data = isJson ? await res.json() : await res.text(); } catch { /* unreadable body: fall through with null */ }
   if (!res.ok) {
     const err = fromResponse(res.status, data);
-    if (opts.admin && res.status === 401 && !opts.key) window.dispatchEvent(new Event(AUTH_EXPIRED)); // a verified login attempt (opts.key) must not trigger this
+    if (opts.admin && res.status === 401) window.dispatchEvent(new Event(AUTH_EXPIRED)); // a rejected or expired session token: back to the login page
     throw err;
   }
   return data;
@@ -68,7 +68,8 @@ export const api = {
   cancelRegistration: (token) => request(`/registrations/${token}/cancel`, J("POST", {})),
   volunteer: (body) => request("/volunteers", J("POST", body)),
   admin: {
-    verify: (key) => request("/admin/stats", { admin: true, key }),
+    // Organizer key -> { token, token_type, expires_in }. Not an `admin` call: a wrong key must not fire AUTH_EXPIRED.
+    login: (key) => request("/admin/login", J("POST", { key })),
     stats: (o) => request("/admin/stats", { ...A, ...o }),
     fests: (o) => request("/admin/fests", { ...A, ...o }),
     fest: (id, o) => request(`/admin/fests/${id}`, { ...A, ...o }),            // fest + its events (archived ones included)
@@ -89,7 +90,7 @@ export const api = {
     checkInRegistration: (id) => request(`/admin/registrations/${id}/check-in`, { ...A, ...J("POST", {}) }),
     checkIn: (token, eventId) => request("/admin/checkin", { ...A, ...J("POST", { token, event_id: eventId || undefined }) }),
     volunteers: (o) => request("/admin/volunteers", { ...A, ...o }),
-    // CSV arrives as a file: fetched with the organizer header (a plain link can't send it), handed back as text + filename.
+    // CSV arrives as a file: fetched with the Authorization header (a plain link can't send it), handed back as text + filename.
     async csv(eventId) {
       const res = await send(`/admin/events/${eventId}/export.csv`, A);
       if (!res.ok) { let d = null; try { d = await res.json(); } catch { /* not json */ } const e = fromResponse(res.status, d); if (res.status === 401) window.dispatchEvent(new Event(AUTH_EXPIRED)); throw e; }

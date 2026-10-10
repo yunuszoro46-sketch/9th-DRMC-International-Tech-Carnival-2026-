@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../lib/api.js";
-import { organizerKey } from "../lib/storage.js";
+import { organizerToken } from "../lib/storage.js";
 import { Link, Navigate, useNavigate, usePageTitle, useSearchParams } from "../router.jsx";
 import Button from "../components/common/Button.jsx";
 import Icon from "../components/common/Icon.jsx";
@@ -14,15 +14,15 @@ export default function OrganizerLogin() {
   usePageTitle("Organizer sign in");
   const navigate = useNavigate(), [params] = useSearchParams();
   const [key, setKey] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState("");
-  if (organizerKey.get()) return <Navigate to={safeNext(params.get("next"))} />;
+  if (organizerToken.get()) return <Navigate to={safeNext(params.get("next"))} />;
   async function submit(e) {
     e.preventDefault();
     if (busy) return;
     if (!key.trim()) { setError("Enter the organizer key."); return; }
     setBusy(true); setError("");
     try {
-      await api.admin.verify(key.trim());                       // the server decides whether the key is valid
-      organizerKey.set(key.trim());
+      const { token } = await api.admin.login(key.trim());      // the server checks the key and issues a session JWT
+      organizerToken.set(token);                                // the key itself is never stored
       navigate(safeNext(params.get("next")), { replace: true });
     } catch (err) {
       setError(err.status === 401 ? "That organizer key wasn't accepted. Check it and try again." : err.message);

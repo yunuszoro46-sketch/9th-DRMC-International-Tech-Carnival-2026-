@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useRouter } from "../router.jsx";
 import { AUTH_EXPIRED } from "../lib/api.js";
-import { organizerKey } from "../lib/storage.js";
+import { organizerToken } from "../lib/storage.js";
 import Icon from "../components/common/Icon.jsx";
 import Button from "../components/common/Button.jsx";
 import Modal from "../components/common/Modal.jsx";
@@ -14,19 +14,20 @@ export const ORG_NAV = [
   { to: "/organizer/check-in", label: "Check-in", icon: "scan" },
 ];
 
-// Guards every organizer page. The key is only a convenience gate in the browser: the API re-checks it on every request,
-// so a stale or forged key can never read or change data. An expired/rejected key (401 from any call) lands on the login page.
+// Guards every organizer page. The session JWT is only a convenience gate in the browser: the API verifies its signature
+// and expiry on every request, so a stale or forged token can never read or change data. An expired/rejected token
+// (401 from any call) lands on the login page.
 export default function OrganizerLayout({ title, children }) {
   const { path } = useRouter(), navigate = useNavigate();
   const [menu, setMenu] = useState(false);
   useEffect(() => setMenu(false), [path]);
   useEffect(() => {
-    const expired = () => { organizerKey.clear(); navigate("/organizer/login?expired=1", { replace: true }); };
+    const expired = () => { organizerToken.clear(); navigate("/organizer/login?expired=1", { replace: true }); };
     window.addEventListener(AUTH_EXPIRED, expired);
     return () => window.removeEventListener(AUTH_EXPIRED, expired);
   }, [navigate]);
-  if (!organizerKey.get()) return <Navigate to={`/organizer/login?next=${encodeURIComponent(path)}`} />;
-  const signOut = () => { organizerKey.clear(); navigate("/organizer/login", { replace: true }); };
+  if (!organizerToken.get()) return <Navigate to={`/organizer/login?next=${encodeURIComponent(path)}`} />;
+  const signOut = () => { organizerToken.clear(); navigate("/organizer/login", { replace: true }); };
   const nav = (
     <nav className="org-nav" aria-label="Organizer">
       {ORG_NAV.map((n) => <NavLink key={n.to} {...n}>{n.label}</NavLink>)}

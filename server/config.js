@@ -1,5 +1,6 @@
 // Environment -> validated config. Nothing here runs at import time, so tests can set env first.
-const PLACEHOLDERS = new Set(['demo-organizer-key', 'change-me-please', 'dev-secret']);
+const PLACEHOLDERS = new Set(['demo-organizer-key', 'change-me-please', 'dev-secret', 'dev-jwt-secret', 'change-me-too']);
+const SECRETS = ['ORGANIZER_KEY', 'PASS_SECRET', 'JWT_SECRET'];
 
 // TRUST_PROXY: "0"/"false"/"no"/"off"/"" -> false; "true"/"yes"/"on" -> 1 hop; "2" -> 2 hops; unknown -> false (fail closed).
 function parseTrustProxy(v) {
@@ -12,9 +13,9 @@ function parseTrustProxy(v) {
 function loadConfig(env = process.env) {
   const production = env.NODE_ENV === 'production';
   if (production) {
-    const missing = ['ORGANIZER_KEY', 'PASS_SECRET'].filter((k) => !env[k]);
+    const missing = SECRETS.filter((k) => !env[k]);
     if (missing.length) throw new Error(`Refusing to start in production: ${missing.join(' and ')} must be set`);
-    const weak = ['ORGANIZER_KEY', 'PASS_SECRET'].filter((k) => PLACEHOLDERS.has(env[k]));
+    const weak = SECRETS.filter((k) => PLACEHOLDERS.has(env[k]));
     if (weak.length) throw new Error(`Refusing to start in production: ${weak.join(" and ")} must not use a demo placeholder value`);
   }
   const num = (k, d) => () => +env[k] || d; // read live so limits can be tuned (and tested) at runtime
@@ -24,6 +25,9 @@ function loadConfig(env = process.env) {
     dbFile: env.DB_FILE || undefined,
     organizerKey: env.ORGANIZER_KEY || 'demo-organizer-key',
     passSecret: env.PASS_SECRET || 'dev-secret',
+    // Organizer sessions: signing the organizer key in exchanges it for a JWT that lives `jwtTtlSec` seconds.
+    jwtSecret: env.JWT_SECRET || 'dev-jwt-secret',
+    jwtTtlSec: Math.min(7 * 86400, Math.max(60, +env.JWT_TTL_SEC || 8 * 3600)),
     trustProxy: parseTrustProxy(env.TRUST_PROXY),
     get rateLimitPerMin() { return num('RATE_LIMIT_PER_MIN', 30)(); },
     get adminRateLimitPerMin() { return num('ADMIN_RATE_LIMIT_PER_MIN', 120)(); },

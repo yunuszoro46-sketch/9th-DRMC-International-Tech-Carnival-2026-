@@ -9,6 +9,7 @@ const { createRegistrationsRepo } = require('./repository/registrations');
 const { createPassesRepo } = require('./repository/passes');
 const { createVolunteersRepo } = require('./repository/volunteers');
 const { createClubService } = require('./services/club');
+const { createAuthService } = require('./services/auth');
 const { createRouter } = require('./http/router');
 const { createStaticHandler } = require('./http/static');
 const { createIntentClient } = require('./ai/intent-client');
@@ -26,8 +27,9 @@ function createApp(db = open(), config = loadConfig()) {
   const service = createClubService({ interpreter,
     events: createEventsRepo(db), registrations: createRegistrationsRepo(db), passes: createPassesRepo(db), volunteers: createVolunteersRepo(db),
     tx: (fn) => transaction(db, fn), secret: () => config.passSecret });
-  const routes = [...require('./http/routes/public')(service), ...require('./http/routes/admin')(service)];
-  const handle = createRouter({ routes, config, serveStatic: createStaticHandler(staticDir()) });
+  const auth = createAuthService(config);
+  const routes = [...require('./http/routes/public')(service), ...require('./http/routes/admin')(service, auth)];
+  const handle = createRouter({ routes, config, auth, serveStatic: createStaticHandler(staticDir()) });
   return { server: http.createServer(handle), db, config, ai: !!client };
 }
 module.exports = { createApp };

@@ -1,17 +1,17 @@
 // Organizer console: login, live stat widgets, capacity board, gate check-in, filterable participant table.
-import { api, apiLatest, debounce, toast, orgKey, downloadCsv } from '../api.js';
+import { api, apiLatest, debounce, toast, orgToken, downloadCsv } from '../api.js';
 import { $, $$, esc, fmt, hydrate, countTo, pctOf, tone } from '../ui.js';
 
 const STATUSES = ['PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED'];
 
 export async function organizer(ctx) {
   const { view } = ctx;
-  if (!orgKey.get()) return login(ctx);
-  const first = await api('/admin/stats', { admin: true }).catch((e) => { if (e.status === 401 || e.status === 429) { if (e.status === 401) orgKey.clear(); toast(e.status === 401 ? 'Organizer key rejected. Please sign in again.' : e.message, 'error'); return null; } throw e; });
+  if (!orgToken.get()) return login(ctx);
+  const first = await api('/admin/stats', { admin: true }).catch((e) => { if (e.status === 401 || e.status === 429) { if (e.status === 401) orgToken.clear(); toast(e.status === 401 ? 'Organizer session expired. Please sign in again.' : e.message, 'error'); return null; } throw e; });
   if (!first) return login(ctx);
 
   const sel = { ev: first.capacity[0]?.id ?? '', status: '', q: '' };
-  const guard = async (fn) => { try { return await fn(); } catch (e) { if (e.status === 401) { orgKey.clear(); toast('Session expired. Sign in again.', 'warn'); organizer(ctx); } else toast(e.message, 'error'); } };
+  const guard = async (fn) => { try { return await fn(); } catch (e) { if (e.status === 401) { orgToken.clear(); toast('Session expired. Sign in again.', 'warn'); organizer(ctx); } else toast(e.message, 'error'); } };
 
   view.innerHTML = `<div class="dash-head"><div><h1>Organizer console</h1><p class="mute small"><span class="dot"></span> Live · updated <span id="upd">now</span></p></div>
       <div class="actions"><button class="btn" id="refresh">Refresh</button><button class="btn ghost" id="logout">Log out</button></div></div>
@@ -61,7 +61,7 @@ export async function organizer(ctx) {
   $('#caps').onclick = (e) => { const b = e.target.closest('[data-ev]'); if (b) { sel.ev = b.dataset.ev; $('#ev').value = sel.ev; loadTable(); $('#tbl').scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
   $('#tbl').onchange = (e) => { const s = e.target.closest('select[data-id]'); if (s) guard(async () => { try { await api('/admin/registrations/' + s.dataset.id, { method: 'PATCH', admin: true, body: { status: s.value } }); toast(`Marked ${s.value.toLowerCase()}`, 'success'); } catch (x) { if (x.status === 401) throw x; toast(x.message, 'error'); } await Promise.all([loadTable(), loadStats()]); }); };
   $('#refresh').onclick = () => { loadStats(); loadTable(); };
-  $('#logout').onclick = () => { orgKey.clear(); toast('Signed out', 'success'); organizer(ctx); };
+  $('#logout').onclick = () => { orgToken.clear(); toast('Signed out', 'success'); organizer(ctx); };
   $('#csv').onclick = () => guard(async () => { await downloadCsv(`/admin/events/${sel.ev}/export.csv`, `event-${sel.ev}-participants.csv`); toast('CSV downloaded', 'success'); });
 
   // gate check-in
@@ -92,8 +92,8 @@ function login(ctx) {
     <form id="lf"><label for="k">Organizer key</label><input id="k" type="password" autocomplete="current-password" required placeholder="${demo ? 'Local demo key: demo-organizer-key' : 'Organizer key'}">
     <div class="actions"><button class="btn primary" id="go">Enter console</button></div></form></section>`;
   $('#lf').onsubmit = async (e) => {
-    e.preventDefault(); const go = $('#go'); go.disabled = true; orgKey.set($('#k').value);
-    try { await api('/admin/stats', { admin: true }); toast('Welcome back', 'success'); organizer(ctx); }
-    catch (x) { orgKey.clear(); toast(x.status === 401 ? 'Wrong organizer key' : x.message, 'error'); go.disabled = false; $('#k').select(); }
+    e.preventDefault(); const go = $('#go'); go.disabled = true;
+    try { orgToken.set((await api('/admin/login', { method: 'POST', body: { key: $('#k').value } })).token); toast('Welcome back', 'success'); organizer(ctx); }
+    catch (x) { orgToken.clear(); toast(x.status === 401 ? 'Wrong organizer key' : x.message, 'error'); go.disabled = false; $('#k').select(); }
   };
 }

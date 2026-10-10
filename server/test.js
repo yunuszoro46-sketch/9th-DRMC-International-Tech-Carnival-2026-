@@ -8,7 +8,7 @@ const { at, day } = makeDates();
 process.env.RATE_LIMIT_PER_MIN = '1000'; process.env.ORGANIZER_KEY = 'k'; process.env.PASS_SECRET = 's';
 const db = seed(open(':memory:'));
 const { server } = createApp(db);
-const A = { 'x-organizer-key': 'k' };
+const A = {};   // organizer headers: filled with the session JWT once the server is up
 let pass = 0;
 const t = async (name, fn) => { try { await fn(); pass++; console.log('  ok  ' + name); } catch (e) { console.log('FAIL  ' + name + '\n      ' + e.message); process.exitCode = 1; } };
 server.listen(0, async () => {
@@ -25,7 +25,12 @@ server.listen(0, async () => {
   await t('past deadline blocked', async () => assert.equal((await call('POST', `/api/events/${id('Hack the Winter')}/register`, { name: 'T', email: 'a@b.co', answers: { team: 'x', size: '1' } })).s, 409));
   await t('full event blocked', async () => assert.equal((await call('POST', `/api/events/${id('Valorant')}/register`, { name: 'T', email: 'a@b.co', answers: { team: 'x', size: '1' } })).j.error, 'event_full'));
   await t('required dynamic field enforced', async () => assert.equal((await call('POST', `/api/events/${id('Code Rush')}/register`, { name: 'T', email: 'a@b.co', answers: {} })).s, 400));
-  await t('organizer endpoints need key', async () => assert.equal((await call('GET', '/api/admin/stats')).s, 401));
+  await t('organizer endpoints need a token', async () => assert.equal((await call('GET', '/api/admin/stats')).s, 401));
+  await t('login: wrong key 401, right key issues a bearer JWT', async () => {
+    assert.equal((await call('POST', '/api/admin/login', { key: 'nope' })).s, 401);
+    const r = await call('POST', '/api/admin/login', { key: 'k' }); assert.equal(r.s, 200); assert.equal(r.j.token_type, 'Bearer'); assert(r.j.expires_in > 0);
+    A.authorization = 'Bearer ' + r.j.token;
+  });
   await t('stats', async () => assert((await call('GET', '/api/admin/stats', null, A)).j.fests === 3));
   let passTok;
   await t('participant sees confirmed pass', async () => { const r = await call('GET', `/api/registrations/${tok}`); passTok = r.j.pass_token; assert(passTok); });

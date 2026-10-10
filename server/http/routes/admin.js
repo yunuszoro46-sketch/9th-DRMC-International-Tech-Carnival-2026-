@@ -1,10 +1,13 @@
-// Organizer endpoints. The router enforces the key + rate limits before any handler runs.
+// Organizer endpoints. The router enforces the JWT + rate limits before any handler runs.
 const { route, json, csvFile, paging } = require('../router');
 const A = { admin: true };
 const id = (m) => +m[1];
 const intParam = (url, k) => { const n = parseInt(url.searchParams.get(k), 10); return Number.isNaN(n) ? null : n; };
 
-module.exports = (svc) => [
+module.exports = (svc, auth) => [
+  // Exchange the organizer key for a JWT. Not behind the token check (it issues the token), but rate limited like one.
+  route('POST', /^\/api\/admin\/login$/, ({ body }) => auth.login(body.key), { login: true }),
+
   route('GET', /^\/api\/admin\/stats$/, () => svc.stats(), A),
 
   // fests

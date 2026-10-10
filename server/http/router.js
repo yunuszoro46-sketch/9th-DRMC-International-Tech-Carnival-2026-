@@ -1,6 +1,6 @@
-// Matches routes, applies rate limits + organizer auth, parses JSON bodies, serialises responses.
+// Matches routes, applies rate limits + organizer auth (JWT bearer tokens), parses JSON bodies, serialises responses.
 // Contains NO business rules and NO SQL.
-const { safeEqual } = require('../domain/pass');
+const { bearer } = require('../domain/jwt');
 const { createRateLimiter, clientIp } = require('./rate-limit');
 
 const KIND_STATUS = { validation: 400, unauthorized: 401, forbidden: 403, not_found: 404, conflict: 409, payload: 413, rate_limited: 429 };
@@ -12,16 +12,17 @@ const SECURITY_HEADERS = {
   'cross-origin-opener-policy': 'same-origin', 'permissions-policy': 'camera=(self), microphone=(), geolocation=()' };
 
 // `limit` names the rate-limit bucket for a public route; without it public POSTs share the `write` bucket.
-const route = (method, pattern, handler, { admin = false, limit = null } = {}) => ({ method, pattern, handler, admin, limit });
+// `admin` routes need a valid organizer JWT; the `login` route issues one and shares the admin + wrong-key limits.
+const route = (method, pattern, handler, { admin = false, login = false, limit = null } = {}) => ({ method, pattern, handler, admin, login, limit });
 const json = (data, status = 200) => ({ status, type: 'application/json', body: JSON.stringify(data) });
 const csvFile = ({ csv, filename }) => ({ status: 200, type: 'text/csv; charset=utf-8', body: csv, headers: { 'content-disposition': `attachment; filename="${filename}"` } });
 const paging = (url, def, max) => [Math.min(max, Math.max(1, parseInt(url.searchParams.get('limit'), 10) || def)), Math.max(0, parseInt(url.searchParams.get('offset'), 10) || 0)];
 
-function createRouter({ routes, config, serveStatic }) {
+function createRouter({ routes, config, auth, serveStatic }) {
   const limiters = {
     write: createRateLimiter({ max: () => config.rateLimitPerMin }),           // public POSTs
     admin: createRateLimiter({ max: () => config.adminRateLimitPerMin }),      // every /api/admin/* call
-    authFail: createRateLimiter({ max: () => config.authFailLimitPerMin }),    // wrong-key guesses (brute force)
+    authFail: createRateLimiter({ max: () => config.authFailLimitPerMin }),    // wrong keys / bad tokens (brute force)
     assistant: createRateLimiter({ max: () => config.assistantRateLimitPerMin }), // assistant questions: never eat into the registration allowance
   };
   async function readBody(req) {
@@ -42,15 +43,20 @@ function createRouter({ routes, config, serveStatic }) {
       for (const r of routes) {
         const m = req.method === r.method && url.pathname.match(r.pattern);
         if (!m) continue;
-        if (r.admin) {
+        if (r.admin || r.login) {
           if (limiters.admin.hit(ip) || limiters.authFail.blocked(ip)) return err(429, 'rate_limited', 'Too many requests. Try again in a minute.', null, { 'retry-after': String(limiters.admin.retryAfter(ip)) });
-          if (!safeEqual(req.headers['x-organizer-key'], config.organizerKey)) { limiters.authFail.hit(ip); return err(401, 'unauthorized', 'Organizer key required.'); }
+          if (r.admin && !auth.verify(bearer(req.headers.authorization))) {
+            limiters.authFail.hit(ip);
+            return err(401, 'unauthorized', 'Organizer sign-in required.', null, { 'www-authenticate': 'Bearer realm="organizer"' });
+          }
         } else {
           const bucket = limiters[r.limit || (r.method === 'POST' ? 'write' : '')];
           if (bucket && bucket.hit(ip)) return err(429, 'rate_limited', 'Too many requests. Try again in a minute.', null, { 'retry-after': String(bucket.retryAfter(ip)) });
         }
         const body = r.method === 'GET' ? {} : await readBody(req);
-        const out = await r.handler({ m, url, body });
+        let out;
+        try { out = await r.handler({ m, url, body }); }
+        catch (e) { if (r.login && e.kind === 'unauthorized') limiters.authFail.hit(ip); throw e; }   // a wrong key counts towards the brute-force throttle
         return send(out && out.type ? out : json(out));
       }
       if (url.pathname.startsWith('/api/')) return err(404, 'not_found', 'Not found.');

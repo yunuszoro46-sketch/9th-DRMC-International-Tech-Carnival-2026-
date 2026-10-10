@@ -33,6 +33,6 @@ window.fetch = async (input, init = {}) => {
   if (init.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   const headers = new Headers(init.headers || {}); let body = {};
   try { body = init.body ? JSON.parse(init.body) : {}; } catch { body = {}; }
-  const out = handle((init.method || 'GET').toUpperCase(), url, body, headers.get('x-organizer-key'));   // route patterns include the /api prefix
+  const out = handle((init.method || 'GET').toUpperCase(), url, body, headers.get('authorization'));   // route patterns include the /api prefix
   return new Response(out.body, { status: out.status, headers: { 'content-type': out.type, ...(out.headers || {}) } });
 };

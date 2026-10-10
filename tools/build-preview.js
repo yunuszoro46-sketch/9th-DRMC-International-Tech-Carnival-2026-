@@ -48,8 +48,9 @@ const mockFn = (CATALOG, FORMS) => {   // serialised into the page; runs in the 
       const e = events.find((x) => x.id === r.event_id); return { body: { id: r.id, name: r.name, email: r.email, status: r.status, answers: JSON.stringify(r.answers), created_at: r.created_at, event_id: e.id, fest_id: e.fest_id, title: e.title, venue: e.venue, starts_at: e.starts_at,
         pass_token: r.status !== 'CONFIRMED' || !r.pass || r.pass.status === 'REVOKED' ? null : r.pass.token, pass_status: r.pass && r.pass.status } };
     }
+    if (path === '/admin/login' && method === 'POST') return body.key === 'demo-organizer-key' ? { body: { token: 'preview-session', token_type: 'Bearer', expires_in: 28800 } } : E(401, "That organizer key wasn't accepted.");
     if (path.startsWith('/admin/')) {
-      if (key !== 'demo-organizer-key') return E(401, 'Organizer key required');
+      if (key !== 'Bearer preview-session') return E(401, 'Organizer sign-in required');
       if (path === '/admin/stats') { const by = {}; regs.forEach((r) => { by[r.status] = (by[r.status] || 0) + 1; });
         return { body: { fests: fests.length, events: events.length, registrations: Object.entries(by).map(([status, n]) => ({ status, n })), checkedIn: regs.filter((r) => r.pass && r.pass.status === 'CHECKED_IN').length,
           capacity: events.map((e) => ({ id: e.id, title: e.title, category: e.category, capacity: e.capacity, fest_name: festOf(e).name, club_name: clubOf(festOf(e)).name, taken: taken(e) })) } }; }
@@ -64,7 +65,7 @@ const mockFn = (CATALOG, FORMS) => {   // serialised into the page; runs in the 
     }
     return E(404, 'Not found');
   }
-  window.fetch = async (url, o = {}) => { const u = new URL(url, 'http://x'), out = handle((o.method || 'GET').toUpperCase(), u.pathname.replace(/^\/api/, ''), u.searchParams, o.body ? JSON.parse(o.body) : {}, (o.headers || {})['x-organizer-key']);
+  window.fetch = async (url, o = {}) => { const u = new URL(url, 'http://x'), out = handle((o.method || 'GET').toUpperCase(), u.pathname.replace(/^\/api/, ''), u.searchParams, o.body ? JSON.parse(o.body) : {}, (o.headers || {}).authorization);
     await new Promise((r) => setTimeout(r, 120));
     return out.csv !== undefined ? new Response(out.csv, { status: 200, headers: { 'content-type': 'text/csv' } }) : new Response(JSON.stringify(out.body), { status: out.status || 200, headers: { 'content-type': 'application/json' } }); };
 };

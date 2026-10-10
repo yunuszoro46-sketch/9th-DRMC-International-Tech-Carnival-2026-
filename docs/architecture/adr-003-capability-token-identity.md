@@ -22,9 +22,14 @@ Identity is a **capability**: possessing an unguessable token is the authorizati
 3. **Lifecycle.** Pass state follows registration state: `CONFIRMED` issues (or reinstates) the pass; reject or cancel
    revokes it; a checked-in pass is never un-checked-in. A revoked or non-confirmed registration never exposes its
    pass token.
-4. **Organizers.** A shared secret `ORGANIZER_KEY` sent as `x-organizer-key`, compared in constant time. All
-   `/api/admin/*` routes sit behind a rate limiter, with a stricter limiter on wrong-key attempts to blunt brute force.
-   In production the server refuses to boot if `ORGANIZER_KEY` or `PASS_SECRET` are missing or still the demo values.
+4. **Organizers.** A shared secret `ORGANIZER_KEY` is sent once to `POST /api/admin/login` (compared in constant time),
+   which returns a short-lived HS256 JWT (`JWT_TTL_SEC`, default 8 h). Every other `/api/admin/*` call sends
+   `Authorization: Bearer <token>`; the router checks signature, `exp`, `iss` and `aud` before any handler runs, and
+   only the exact `{"alg":"HS256","typ":"JWT"}` header is accepted (no `alg: none`). The signing key is derived from
+   `JWT_SECRET` and `ORGANIZER_KEY`, so rotating either signs every organizer out. The browser keeps the token, never
+   the key, in `sessionStorage`. All admin routes and the login sit behind a rate limiter, with a stricter limiter on
+   wrong keys and bad tokens to blunt brute force. In production the server refuses to boot if `ORGANIZER_KEY`,
+   `PASS_SECRET` or `JWT_SECRET` are missing or still the demo values.
 
 ## Consequences
 **Good**
@@ -39,7 +44,8 @@ Identity is a **capability**: possessing an unguessable token is the authorizati
   first; one-time check-in limits the damage to a single use.
 - `PASS_SECRET` is critical. Rotating it invalidates every issued pass; leaking it lets an attacker mint valid-looking
   tokens (they still need a real registration id to check in against an existing pass row).
-- One shared organizer key means no per-organizer audit trail or revocation. Per-organizer accounts are future work.
+- One shared organizer key means no per-organizer audit trail. An individual JWT cannot be revoked before it expires
+  (sign-out only drops it from the browser); rotating `JWT_SECRET` revokes all of them. Per-organizer accounts are future work.
 - The MAC is truncated to 16 base64url characters (~96 bits), which is ample for forgery resistance at this scale.
 
 ## Revisit when

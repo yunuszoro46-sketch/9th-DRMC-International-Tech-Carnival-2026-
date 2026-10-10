@@ -14,7 +14,7 @@ const { at, day } = makeDates();
 
 const db = seedFixtures(open(':memory:'));
 const { server } = createApp(db);
-const A = { 'x-organizer-key': 'k' };
+const A = {};   // organizer headers: filled with the session JWT once the server is up
 let passed = 0;
 const t = async (name, fn) => { try { await fn(); passed++; console.log('  ok  ' + name); } catch (e) { console.log('FAIL  ' + name + '\n      ' + e.message); process.exitCode = 1; } };
 
@@ -30,6 +30,7 @@ server.listen(0, async () => {
   const team = (email) => ({ name: 'P', email, answers: { team: 'T', size: '2' } });
   const reg = (title, body) => call('POST', `/api/events/${id(title)}/register`, body);
   const view = (tok) => call('GET', '/api/registrations/' + tok);
+  A.authorization = 'Bearer ' + (await call('POST', '/api/admin/login', { key: 'k' })).j.token;
   const admin = (m, p, b) => call(m, p, b, A);
   const mkEvent = async (over = {}) => {
     const fest = db.prepare('SELECT id FROM fests ORDER BY id').get().id;
@@ -265,7 +266,13 @@ server.listen(0, async () => {
       ['GET', '/api/admin/events'], ['GET', '/api/admin/events/1'], ['PATCH', '/api/admin/events/1'], ['DELETE', '/api/admin/events/1'], ['POST', '/api/admin/events/1/archive'], ['POST', '/api/admin/events/1/restore'],
       ['GET', '/api/admin/registrations'], ['PATCH', '/api/admin/registrations/1'], ['POST', '/api/admin/registrations/1/check-in'], ['POST', '/api/admin/checkin'], ['GET', '/api/admin/stats']];
     for (const [m, p] of routes) { const r = await call(m, p, {}); assert.deepEqual([r.s, r.j.error], [401, 'unauthorized'], `${m} ${p}`); }
-    assert.equal((await call('GET', '/api/admin/stats', undefined, { 'x-organizer-key': 'wrong' })).s, 401);
+    assert.equal((await call('GET', '/api/admin/stats', undefined, { 'x-organizer-key': 'k' })).s, 401, 'the raw key is no longer a credential');
+    assert.equal((await call('GET', '/api/admin/stats', undefined, { authorization: 'Bearer not.a.jwt' })).s, 401);
+    const [h, p] = A.authorization.slice(7).split('.');
+    assert.equal((await call('GET', '/api/admin/stats', undefined, { authorization: `Bearer ${h}.${p}.${'A'.repeat(43)}` })).s, 401, 'forged signature');
+    const none = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+    assert.equal((await call('GET', '/api/admin/stats', undefined, { authorization: `Bearer ${none({ alg: 'none', typ: 'JWT' })}.${p}.` })).s, 401, 'alg=none');
+    const r = await call('GET', '/api/admin/stats', undefined, { authorization: 'Bearer x' }); assert.equal(r.h.get('www-authenticate'), 'Bearer realm="organizer"');
   });
   await t('public responses never leak organizer data or internals', async () => {
     const e = (await call('GET', `/api/events/${id('Code Rush')}`)).j, v = (await view(approvedTok)).j;

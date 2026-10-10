@@ -41,7 +41,7 @@ npm run web:install && npm run web:build     # React build -> web/dist (restart 
 npm run web:dev         # Vite dev server on :5173, proxies /api to :3000
 ```
 
-Node >= 22.13 (the built-in SQLite driver needs it). The backend has zero npm dependencies. Demo organizer key: `demo-organizer-key` (header `x-organizer-key`). In production `ORGANIZER_KEY` and `PASS_SECRET` are mandatory.
+Node >= 22.13 (the built-in SQLite driver needs it). The backend has zero npm dependencies. Demo organizer key: `demo-organizer-key`, exchanged at `POST /api/admin/login` for a JWT sent as `Authorization: Bearer <token>`. In production `ORGANIZER_KEY`, `PASS_SECRET` and `JWT_SECRET` are mandatory.
 
 The server picks `web/dist` or `public/` **once at startup**: restart it after the first build.
 
